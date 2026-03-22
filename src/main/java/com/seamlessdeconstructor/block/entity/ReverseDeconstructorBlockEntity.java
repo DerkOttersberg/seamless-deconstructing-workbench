@@ -320,6 +320,51 @@ public class ReverseDeconstructorBlockEntity extends BlockEntity implements Impl
         return new ReverseDeconstructorScreenHandler(syncId, playerInventory, this, propertyDelegate);
     }
 
+    public ItemStack getRenderInputStack() {
+        return getStack(INPUT_SLOT);
+    }
+
+    public ItemStack getRenderOutputStack() {
+        for (int slot = OUTPUT_START; slot <= OUTPUT_END; slot++) {
+            ItemStack stack = getStack(slot);
+            if (!stack.isEmpty()) {
+                return stack;
+            }
+        }
+        return ItemStack.EMPTY;
+    }
+
+    @Override
+    public ItemStack removeStack(int slot, int amount) {
+        ItemStack result = ImplementedInventory.super.removeStack(slot, amount);
+        if (!result.isEmpty()) {
+            markDirtyAndSync();
+        }
+        return result;
+    }
+
+    @Override
+    public ItemStack removeStack(int slot) {
+        ItemStack result = ImplementedInventory.super.removeStack(slot);
+        if (!result.isEmpty()) {
+            markDirtyAndSync();
+        }
+        return result;
+    }
+
+    @Override
+    public void setStack(int slot, ItemStack stack) {
+        ImplementedInventory.super.setStack(slot, stack);
+        markDirtyAndSync();
+    }
+
+    private void markDirtyAndSync() {
+        markDirty();
+        if (this.world instanceof ServerWorld serverWorld) {
+            serverWorld.getChunkManager().markForUpdate(this.pos);
+        }
+    }
+
     @Override
     public int[] getAvailableSlots(Direction side) {
         return side == Direction.DOWN ? EXTRACT_SLOTS : INSERT_SLOTS;
