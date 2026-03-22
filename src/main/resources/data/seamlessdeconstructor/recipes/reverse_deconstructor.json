@@ -1,20 +1,18 @@
 {
   "type": "minecraft:crafting_shaped",
+  "category": "misc",
   "pattern": [
-    "WWW",
-    "WCW",
-    "WWW"
+    "SSS",
+    "P P",
+    "CCC"
   ],
   "key": {
-    "W": {
-      "item": "minecraft:spruce_planks"
-    },
-    "C": {
-      "item": "minecraft:crafting_table"
-    }
+    "S": "minecraft:stone_bricks",
+    "P": "#minecraft:planks",
+    "C": "minecraft:cobblestone"
   },
   "result": {
-    "id": "seamlessdeconstructor:reverse_deconstructor",
-    "count": 1
+    "count": 1,
+    "id": "seamlessdeconstructor:reverse_deconstructor"
   }
 }
