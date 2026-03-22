@@ -21,6 +21,10 @@ public final class ModBlocks {
             "reverse_deconstructor",
         id -> new ReverseDeconstructorBlock(AbstractBlock.Settings.copy(Blocks.CRAFTING_TABLE)
             .nonOpaque()
+            .solidBlock((state, world, pos) -> false)
+            .suffocates((state, world, pos) -> false)
+            .blockVision((state, world, pos) -> false)
+            .allowsSpawning((state, world, pos, type) -> false)
             .strength(2.5f)
             .sounds(BlockSoundGroup.WOOD)
             .registryKey(RegistryKey.of(RegistryKeys.BLOCK, id)))

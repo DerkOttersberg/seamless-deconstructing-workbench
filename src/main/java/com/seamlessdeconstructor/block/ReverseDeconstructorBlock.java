@@ -75,6 +75,11 @@ public class ReverseDeconstructorBlock extends BlockWithEntity implements BlockE
     }
 
     @Override
+    public boolean hasSidedTransparency(BlockState state) {
+        return true;
+    }
+
+    @Override
     protected ActionResult onUse(BlockState state, World world, BlockPos pos, PlayerEntity player, BlockHitResult hit) {
         if (world.isClient()) {
             return ActionResult.SUCCESS;

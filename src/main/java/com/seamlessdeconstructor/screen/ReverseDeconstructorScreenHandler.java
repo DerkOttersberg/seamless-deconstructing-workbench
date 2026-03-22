@@ -5,13 +5,14 @@ import net.minecraft.entity.player.PlayerInventory;
 import net.minecraft.inventory.Inventory;
 import net.minecraft.inventory.SimpleInventory;
 import net.minecraft.item.ItemStack;
+import net.minecraft.item.Items;
 import net.minecraft.screen.ArrayPropertyDelegate;
 import net.minecraft.screen.PropertyDelegate;
 import net.minecraft.screen.ScreenHandler;
 import net.minecraft.screen.slot.Slot;
 
 public class ReverseDeconstructorScreenHandler extends ScreenHandler {
-    private static final int INVENTORY_SIZE = 7;
+    private static final int INVENTORY_SIZE = 8;
 
     private final Inventory inventory;
     private final PropertyDelegate propertyDelegate;
@@ -28,9 +29,25 @@ public class ReverseDeconstructorScreenHandler extends ScreenHandler {
 
         inventory.onOpen(playerInventory.player);
 
-        addSlot(new Slot(inventory, 0, 30, 34));
+        addSlot(new Slot(inventory, 0, 30, 24) {
+            @Override
+            public boolean canInsert(ItemStack stack) {
+                return !stack.isOf(Items.BOOK);
+            }
+        });
+        addSlot(new Slot(inventory, 1, 30, 42) {
+            @Override
+            public boolean canInsert(ItemStack stack) {
+                return stack.isOf(Items.BOOK);
+            }
 
-        int outputIndex = 1;
+            @Override
+            public int getMaxItemCount() {
+                return 1;
+            }
+        });
+
+        int outputIndex = 2;
         for (int row = 0; row < 2; row++) {
             for (int column = 0; column < 3; column++) {
                 final int slotIndex = outputIndex++;
@@ -71,7 +88,11 @@ public class ReverseDeconstructorScreenHandler extends ScreenHandler {
                 }
                 slot.onQuickTransfer(originalStack, newStack);
             } else {
-                if (!insertItem(originalStack, 0, 1, false)) {
+                if (originalStack.isOf(Items.BOOK)) {
+                    if (!insertItem(originalStack, 1, 2, false)) {
+                        return ItemStack.EMPTY;
+                    }
+                } else if (!insertItem(originalStack, 0, 1, false)) {
                     return ItemStack.EMPTY;
                 }
             }

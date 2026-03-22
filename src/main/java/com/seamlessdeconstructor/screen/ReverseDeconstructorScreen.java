@@ -32,7 +32,11 @@ public class ReverseDeconstructorScreen extends HandledScreen<ReverseDeconstruct
         int border = ColorHelper.getArgb(255, 110, 96, 74);
         context.drawStrokedRectangle(x, y, this.backgroundWidth, this.backgroundHeight, border);
 
-        drawSlot(context, x + 29, y + 33, 18, 18);
+        drawSlot(context, x + 29, y + 24, 18, 18);
+        drawSlot(context, x + 29, y + 42, 18, 18);
+        if (!this.handler.getSlot(1).hasStack()) {
+            drawBookHint(context, x + 29, y + 42);
+        }
 
         for (int row = 0; row < 2; row++) {
             for (int col = 0; col < 3; col++) {
@@ -58,6 +62,17 @@ public class ReverseDeconstructorScreen extends HandledScreen<ReverseDeconstruct
             int progress = handler.getScaledProgress();
             context.fill(arrowLeft, arrowTop, arrowLeft + progress, arrowTop + 10, ColorHelper.getArgb(255, 199, 173, 111));
         }
+    }
+
+    private static void drawBookHint(DrawContext context, int x, int y) {
+        int outline = ColorHelper.getArgb(170, 174, 156, 106);
+        int page = ColorHelper.getArgb(120, 220, 210, 182);
+        int spine = ColorHelper.getArgb(170, 126, 102, 72);
+
+        context.drawVerticalLine(x + 7, y + 5, y + 12, spine);
+        context.drawVerticalLine(x + 8, y + 5, y + 12, spine);
+        context.drawStrokedRectangle(x + 6, y + 4, 7, 10, outline);
+        context.fill(x + 9, y + 6, x + 12, y + 12, page);
     }
 
     private static void drawSlot(DrawContext context, int x, int y, int width, int height) {
