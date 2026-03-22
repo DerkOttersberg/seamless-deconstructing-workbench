@@ -76,7 +76,7 @@ public final class ModConfig {
 
     public static final class ModConfigData {
         public int processTicks = 100;
-        public int minLossPercent = 10;
-        public int maxLossPercent = 20;
+        public int minLossPercent = 0;
+        public int maxLossPercent = 0;
     }
 }

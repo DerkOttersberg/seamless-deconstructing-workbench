@@ -20,6 +20,14 @@ public final class DeconstructionPlan {
         return recipeId;
     }
 
+    public double totalUnitsPerOutput() {
+        double total = 0.0;
+        for (double value : unitsPerOutput.values()) {
+            total += value;
+        }
+        return total;
+    }
+
     public Map<Item, Integer> maxRollPerOperation() {
         Map<Item, Integer> result = new LinkedHashMap<>();
         for (Map.Entry<Item, Double> entry : unitsPerOutput.entrySet()) {

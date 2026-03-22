@@ -83,7 +83,11 @@ public final class DeconstructionResolver {
                 perOutput.put(ingredientEntry.getKey(), ingredientEntry.getValue() / (double) outputCount);
             }
 
-            byOutputItem.putIfAbsent(result.getItem(), new DeconstructionPlan(recipeEntry.id().getValue(), perOutput));
+            DeconstructionPlan candidatePlan = new DeconstructionPlan(recipeEntry.id().getValue(), perOutput);
+            DeconstructionPlan existingPlan = byOutputItem.get(result.getItem());
+            if (existingPlan == null || shouldReplace(existingPlan, candidatePlan)) {
+                byOutputItem.put(result.getItem(), candidatePlan);
+            }
         }
 
         return byOutputItem;
@@ -113,5 +117,20 @@ public final class DeconstructionResolver {
         }
 
         return CraftingRecipeInput.create(width, height, inputStacks);
+    }
+
+    private static boolean shouldReplace(DeconstructionPlan existing, DeconstructionPlan candidate) {
+        boolean existingVanilla = "minecraft".equals(existing.recipeId().getNamespace());
+        boolean candidateVanilla = "minecraft".equals(candidate.recipeId().getNamespace());
+
+        if (candidateVanilla && !existingVanilla) {
+            return true;
+        }
+        if (existingVanilla && !candidateVanilla) {
+            return false;
+        }
+
+        // Prefer the plan that returns more total ingredient units per output item.
+        return candidate.totalUnitsPerOutput() > existing.totalUnitsPerOutput();
     }
 }

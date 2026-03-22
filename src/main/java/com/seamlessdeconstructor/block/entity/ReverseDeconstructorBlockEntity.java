@@ -19,10 +19,12 @@ import net.minecraft.inventory.SidedInventory;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
+import net.minecraft.network.packet.s2c.play.BlockEntityUpdateS2CPacket;
 import net.minecraft.screen.ArrayPropertyDelegate;
 import net.minecraft.screen.NamedScreenHandlerFactory;
 import net.minecraft.screen.PropertyDelegate;
 import net.minecraft.screen.ScreenHandler;
+import net.minecraft.registry.RegistryWrapper;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.storage.ReadView;
 import net.minecraft.storage.WriteView;
@@ -320,18 +322,41 @@ public class ReverseDeconstructorBlockEntity extends BlockEntity implements Impl
         return new ReverseDeconstructorScreenHandler(syncId, playerInventory, this, propertyDelegate);
     }
 
+    @Override
+    public BlockEntityUpdateS2CPacket toUpdatePacket() {
+        return BlockEntityUpdateS2CPacket.create(this);
+    }
+
+    @Override
+    public net.minecraft.nbt.NbtCompound toInitialChunkDataNbt(RegistryWrapper.WrapperLookup registries) {
+        return createNbt(registries);
+    }
+
     public ItemStack getRenderInputStack() {
-        return getStack(INPUT_SLOT);
+        if (this.getCachedState().contains(ReverseDeconstructorBlock.ACTIVE)
+                && this.getCachedState().get(ReverseDeconstructorBlock.ACTIVE)) {
+            return getStack(INPUT_SLOT);
+        }
+        return ItemStack.EMPTY;
     }
 
     public ItemStack getRenderOutputStack() {
-        for (int slot = OUTPUT_START; slot <= OUTPUT_END; slot++) {
-            ItemStack stack = getStack(slot);
-            if (!stack.isEmpty()) {
-                return stack;
-            }
+        return getStack(OUTPUT_START);
+    }
+
+    public ItemStack getRenderOutputStack(int outputIndex) {
+        if (outputIndex < 0 || outputIndex > (OUTPUT_END - OUTPUT_START)) {
+            return ItemStack.EMPTY;
         }
-        return ItemStack.EMPTY;
+        return getStack(OUTPUT_START + outputIndex);
+    }
+
+    @Override
+    public void markDirty() {
+        super.markDirty();
+        if (this.world instanceof ServerWorld serverWorld) {
+            serverWorld.getChunkManager().markForUpdate(this.pos);
+        }
     }
 
     @Override
@@ -360,9 +385,6 @@ public class ReverseDeconstructorBlockEntity extends BlockEntity implements Impl
 
     private void markDirtyAndSync() {
         markDirty();
-        if (this.world instanceof ServerWorld serverWorld) {
-            serverWorld.getChunkManager().markForUpdate(this.pos);
-        }
     }
 
     @Override
