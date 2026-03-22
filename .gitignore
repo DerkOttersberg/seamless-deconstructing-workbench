@@ -1,0 +1,22 @@
+# Gradle/cache
+.gradle/
+.gradle-userhome/
+
+# Local tool downloads
+.tools/
+
+# Build outputs
+build/
+out/
+
+# Minecraft runtime data
+run/
+
+# IDE
+.vscode/
+.idea/
+*.iml
+
+# OS
+Thumbs.db
+.DS_Store

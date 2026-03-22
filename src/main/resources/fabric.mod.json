@@ -1,0 +1,27 @@
+{
+  "schemaVersion": 1,
+  "id": "seamlessdeconstructor",
+  "version": "${version}",
+  "name": "Seamless Deconstructor",
+  "description": "Adds a reverse crafting table that deconstructs crafted items back into ingredients with configurable loss.",
+  "authors": [
+    "derko"
+  ],
+  "contact": {},
+  "license": "MIT",
+  "icon": "assets/seamlessdeconstructor/icon.png",
+  "environment": "*",
+  "entrypoints": {
+    "main": [
+      "com.seamlessdeconstructor.SeamlessDeconstructorMod"
+    ],
+    "client": [
+      "com.seamlessdeconstructor.client.SeamlessDeconstructorClient"
+    ]
+  },
+  "depends": {
+    "fabricloader": ">=0.18.0",
+    "minecraft": "1.21.11",
+    "java": ">=21"
+  }
+}
