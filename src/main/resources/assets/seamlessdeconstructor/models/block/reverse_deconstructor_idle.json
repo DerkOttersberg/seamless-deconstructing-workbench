@@ -1,5 +1,6 @@
 {
 	"credit": "Made with Blockbench",
+	"ambientocclusion": false,
 	"parent": "minecraft:block/block",
 	"textures": {
 		"0": "seamlessdeconstructor:block/cracked_stone_bricks",

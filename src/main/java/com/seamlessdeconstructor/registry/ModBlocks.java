@@ -20,6 +20,7 @@ public final class ModBlocks {
     public static final Block REVERSE_DECONSTRUCTOR = registerBlock(
             "reverse_deconstructor",
         id -> new ReverseDeconstructorBlock(AbstractBlock.Settings.copy(Blocks.CRAFTING_TABLE)
+            .nonOpaque()
             .strength(2.5f)
             .sounds(BlockSoundGroup.WOOD)
             .registryKey(RegistryKey.of(RegistryKeys.BLOCK, id)))
