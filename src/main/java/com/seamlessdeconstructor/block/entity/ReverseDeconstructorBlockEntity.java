@@ -152,11 +152,7 @@ public class ReverseDeconstructorBlockEntity extends BlockEntity implements Impl
             return;
         }
 
-        Map<Item, Integer> rolledOutput = plan.rollOutput(
-                world.getRandom(),
-                ModConfig.minLossFraction(),
-                ModConfig.maxLossFraction()
-        );
+        Map<Item, Integer> rolledOutput = applyDurabilityOutputRules(plan.maxRollPerOperation(), input);
 
         Map<Item, Integer> leftovers = new LinkedHashMap<>();
         for (Map.Entry<Item, Integer> entry : rolledOutput.entrySet()) {
@@ -180,6 +176,83 @@ public class ReverseDeconstructorBlockEntity extends BlockEntity implements Impl
         if (input.isEmpty()) {
             setStack(INPUT_SLOT, ItemStack.EMPTY);
         }
+    }
+
+    private Map<Item, Integer> applyDurabilityOutputRules(Map<Item, Integer> fullOutput, ItemStack input) {
+        if (fullOutput.isEmpty() || !input.isDamageable()) {
+            return fullOutput;
+        }
+
+        int maxDamage = input.getMaxDamage();
+        if (maxDamage <= 0) {
+            return fullOutput;
+        }
+
+        double durabilityFraction = (maxDamage - input.getDamage()) / (double) maxDamage;
+
+        if (durabilityFraction < 0.25D) {
+            return minimumSingleOutput(fullOutput);
+        }
+
+        if (durabilityFraction < 0.50D) {
+            int fullTotal = 0;
+            for (int count : fullOutput.values()) {
+                fullTotal += count;
+            }
+            int minTotal = fullTotal >= 2 ? 2 : 1;
+            return scaleOutputWithMinimum(fullOutput, 0.60D, minTotal);
+        }
+
+        if (durabilityFraction < 0.75D) {
+            return scaleOutputWithMinimum(fullOutput, 0.70D, 1);
+        }
+
+        return fullOutput;
+    }
+
+    private Map<Item, Integer> minimumSingleOutput(Map<Item, Integer> fullOutput) {
+        Map<Item, Integer> result = new LinkedHashMap<>();
+        for (Map.Entry<Item, Integer> entry : fullOutput.entrySet()) {
+            if (entry.getValue() > 0) {
+                result.put(entry.getKey(), 1);
+                break;
+            }
+        }
+        return result;
+    }
+
+    private Map<Item, Integer> scaleOutputWithMinimum(Map<Item, Integer> fullOutput, double multiplier, int minTotal) {
+        Map<Item, Integer> scaled = new LinkedHashMap<>();
+        int total = 0;
+
+        for (Map.Entry<Item, Integer> entry : fullOutput.entrySet()) {
+            int scaledCount = (int) Math.floor(entry.getValue() * multiplier);
+            if (scaledCount > 0) {
+                scaled.put(entry.getKey(), scaledCount);
+                total += scaledCount;
+            }
+        }
+
+        if (total >= minTotal) {
+            return scaled;
+        }
+
+        for (Map.Entry<Item, Integer> entry : fullOutput.entrySet()) {
+            if (total >= minTotal) {
+                break;
+            }
+
+            int maxForItem = entry.getValue();
+            int current = scaled.getOrDefault(entry.getKey(), 0);
+            if (current >= maxForItem) {
+                continue;
+            }
+
+            scaled.put(entry.getKey(), current + 1);
+            total++;
+        }
+
+        return scaled;
     }
 
     private boolean hasRoomFor(Item item, int count) {
