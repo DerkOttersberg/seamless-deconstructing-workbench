@@ -501,4 +501,16 @@ public class ReverseDeconstructorBlockEntity extends BlockEntity implements Impl
         }
         return false;
     }
+
+    @Override
+    public boolean canPlayerUse(PlayerEntity player) {
+        if (this.world == null || this.world.getBlockEntity(this.pos) != this) {
+            return false;
+        }
+        return player.squaredDistanceTo(
+                this.pos.getX() + 0.5D,
+                this.pos.getY() + 0.5D,
+                this.pos.getZ() + 0.5D
+        ) <= 64.0D;
+    }
 }
