@@ -6,7 +6,6 @@
 			{
 				"when": [
 					"gui",
-					"ground",
 					"fixed",
 					"on_shelf"
 				],

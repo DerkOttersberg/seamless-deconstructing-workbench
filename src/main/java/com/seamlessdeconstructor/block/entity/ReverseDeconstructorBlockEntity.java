@@ -7,6 +7,7 @@ import com.seamlessdeconstructor.logic.DeconstructionResolver;
 import com.seamlessdeconstructor.registry.ModBlockEntities;
 import com.seamlessdeconstructor.screen.ReverseDeconstructorScreenHandler;
 import com.seamlessdeconstructor.util.ImplementedInventory;
+import net.fabricmc.fabric.api.networking.v1.PlayerLookup;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.entity.BlockEntity;
@@ -20,6 +21,7 @@ import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
 import net.minecraft.network.packet.s2c.play.BlockEntityUpdateS2CPacket;
+import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.screen.ArrayPropertyDelegate;
 import net.minecraft.screen.NamedScreenHandlerFactory;
 import net.minecraft.screen.PropertyDelegate;
@@ -294,6 +296,9 @@ public class ReverseDeconstructorBlockEntity extends BlockEntity implements Impl
     @Override
     protected void readData(ReadView view) {
         super.readData(view);
+        for (int i = 0; i < this.items.size(); i++) {
+            this.items.set(i, ItemStack.EMPTY);
+        }
         Inventories.readData(view, items);
         this.progress = view.getInt("Progress", 0);
         this.maxProgress = view.getInt("MaxProgress", ModConfig.processTicks());
@@ -355,7 +360,12 @@ public class ReverseDeconstructorBlockEntity extends BlockEntity implements Impl
     public void markDirty() {
         super.markDirty();
         if (this.world instanceof ServerWorld serverWorld) {
-            serverWorld.getChunkManager().markForUpdate(this.pos);
+            BlockEntityUpdateS2CPacket packet = this.toUpdatePacket();
+            if (packet != null) {
+                for (ServerPlayerEntity player : PlayerLookup.tracking(serverWorld, this.pos)) {
+                    player.networkHandler.sendPacket(packet);
+                }
+            }
         }
     }
 
