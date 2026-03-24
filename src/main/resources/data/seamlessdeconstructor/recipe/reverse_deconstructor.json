@@ -7,9 +7,15 @@
     "CCC"
   ],
   "key": {
-    "S": "minecraft:stone_bricks",
-    "P": "#minecraft:planks",
-    "C": "minecraft:cobblestone"
+    "S": {
+      "item": "minecraft:stone_bricks"
+    },
+    "P": {
+      "tag": "minecraft:planks"
+    },
+    "C": {
+      "item": "minecraft:cobblestone"
+    }
   },
   "result": {
     "count": 1,

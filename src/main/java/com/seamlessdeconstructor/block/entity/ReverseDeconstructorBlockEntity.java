@@ -21,6 +21,7 @@ import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
 import net.minecraft.network.packet.s2c.play.BlockEntityUpdateS2CPacket;
+import net.minecraft.nbt.NbtCompound;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.screen.ArrayPropertyDelegate;
 import net.minecraft.screen.NamedScreenHandlerFactory;
@@ -28,8 +29,6 @@ import net.minecraft.screen.PropertyDelegate;
 import net.minecraft.screen.ScreenHandler;
 import net.minecraft.registry.RegistryWrapper;
 import net.minecraft.server.world.ServerWorld;
-import net.minecraft.storage.ReadView;
-import net.minecraft.storage.WriteView;
 import net.minecraft.text.Text;
 import net.minecraft.util.collection.DefaultedList;
 import net.minecraft.util.math.BlockPos;
@@ -367,22 +366,22 @@ public class ReverseDeconstructorBlockEntity extends BlockEntity implements Impl
     }
 
     @Override
-    protected void readData(ReadView view) {
-        super.readData(view);
+    protected void readNbt(NbtCompound nbt, RegistryWrapper.WrapperLookup registries) {
+        super.readNbt(nbt, registries);
         for (int i = 0; i < this.items.size(); i++) {
             this.items.set(i, ItemStack.EMPTY);
         }
-        Inventories.readData(view, items);
-        this.progress = view.getInt("Progress", 0);
-        this.maxProgress = view.getInt("MaxProgress", ModConfig.processTicks());
+        Inventories.readNbt(nbt, items, registries);
+        this.progress = nbt.getInt("Progress");
+        this.maxProgress = nbt.contains("MaxProgress") ? nbt.getInt("MaxProgress") : ModConfig.processTicks();
     }
 
     @Override
-    protected void writeData(WriteView view) {
-        super.writeData(view);
-        Inventories.writeData(view, items);
-        view.putInt("Progress", progress);
-        view.putInt("MaxProgress", maxProgress);
+    protected void writeNbt(NbtCompound nbt, RegistryWrapper.WrapperLookup registries) {
+        super.writeNbt(nbt, registries);
+        Inventories.writeNbt(nbt, items, registries);
+        nbt.putInt("Progress", progress);
+        nbt.putInt("MaxProgress", maxProgress);
     }
 
     @Override

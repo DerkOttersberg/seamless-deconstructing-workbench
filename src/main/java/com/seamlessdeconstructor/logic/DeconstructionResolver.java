@@ -6,7 +6,6 @@ import net.minecraft.recipe.CraftingRecipe;
 import net.minecraft.recipe.Ingredient;
 import net.minecraft.recipe.RecipeEntry;
 import net.minecraft.recipe.RecipeManager;
-import net.minecraft.recipe.ServerRecipeManager;
 import net.minecraft.recipe.ShapedRecipe;
 import net.minecraft.recipe.input.CraftingRecipeInput;
 import net.minecraft.server.world.ServerWorld;
@@ -35,7 +34,7 @@ public final class DeconstructionResolver {
 
     private static Map<Item, DeconstructionPlan> buildCache(ServerWorld world) {
         Map<Item, DeconstructionPlan> byOutputItem = new LinkedHashMap<>();
-        ServerRecipeManager recipeManager = world.getRecipeManager();
+        RecipeManager recipeManager = world.getRecipeManager();
 
         List<RecipeEntry<?>> recipes = new ArrayList<>(recipeManager.values());
         recipes.sort(Comparator.comparing(entry -> entry.id().toString()));
@@ -58,19 +57,17 @@ public final class DeconstructionResolver {
 
             Map<Item, Integer> ingredientCount = new LinkedHashMap<>();
 
-            for (Optional<Ingredient> maybeIngredient : shapedRecipe.getIngredients()) {
-                if (maybeIngredient.isEmpty() || maybeIngredient.get().isEmpty()) {
+            for (Ingredient ingredient : shapedRecipe.getIngredients()) {
+                if (ingredient == null || ingredient.isEmpty()) {
                     continue;
                 }
 
-                Ingredient ingredient = maybeIngredient.get();
-
-                Optional<Item> candidate = ingredient.getMatchingItems().findFirst().map(registryEntry -> registryEntry.value());
-                if (candidate.isEmpty()) {
+                ItemStack[] matches = ingredient.getMatchingStacks();
+                if (matches.length == 0 || matches[0].isEmpty()) {
                     continue;
                 }
 
-                ingredientCount.merge(candidate.get(), 1, Integer::sum);
+                ingredientCount.merge(matches[0].getItem(), 1, Integer::sum);
             }
 
             if (ingredientCount.isEmpty()) {
@@ -83,7 +80,7 @@ public final class DeconstructionResolver {
                 perOutput.put(ingredientEntry.getKey(), ingredientEntry.getValue() / (double) outputCount);
             }
 
-            DeconstructionPlan candidatePlan = new DeconstructionPlan(recipeEntry.id().getValue(), perOutput);
+            DeconstructionPlan candidatePlan = new DeconstructionPlan(recipeEntry.id(), perOutput);
             DeconstructionPlan existingPlan = byOutputItem.get(result.getItem());
             if (existingPlan == null || shouldReplace(existingPlan, candidatePlan)) {
                 byOutputItem.put(result.getItem(), candidatePlan);
@@ -98,17 +95,14 @@ public final class DeconstructionResolver {
         int height = Math.max(1, recipe.getHeight());
 
         List<ItemStack> inputStacks = new ArrayList<>(width * height);
-        for (Optional<Ingredient> maybeIngredient : recipe.getIngredients()) {
-            if (maybeIngredient.isEmpty() || maybeIngredient.get().isEmpty()) {
+        for (Ingredient ingredient : recipe.getIngredients()) {
+            if (ingredient == null || ingredient.isEmpty()) {
                 inputStacks.add(ItemStack.EMPTY);
                 continue;
             }
 
-            ItemStack stack = maybeIngredient.get()
-                    .getMatchingItems()
-                    .findFirst()
-                    .map(entry -> new ItemStack(entry.value()))
-                    .orElse(ItemStack.EMPTY);
+            ItemStack[] matchingStacks = ingredient.getMatchingStacks();
+            ItemStack stack = matchingStacks.length > 0 ? matchingStacks[0].copy() : ItemStack.EMPTY;
             inputStacks.add(stack);
         }
 

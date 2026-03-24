@@ -7,8 +7,6 @@ import net.minecraft.block.Block;
 import net.minecraft.block.Blocks;
 import net.minecraft.item.BlockItem;
 import net.minecraft.item.Item;
-import net.minecraft.registry.RegistryKey;
-import net.minecraft.registry.RegistryKeys;
 import net.minecraft.registry.Registries;
 import net.minecraft.registry.Registry;
 import net.minecraft.sound.BlockSoundGroup;
@@ -26,8 +24,7 @@ public final class ModBlocks {
             .blockVision((state, world, pos) -> false)
             .allowsSpawning((state, world, pos, type) -> false)
             .strength(2.5f)
-            .sounds(BlockSoundGroup.WOOD)
-            .registryKey(RegistryKey.of(RegistryKeys.BLOCK, id)))
+                .sounds(BlockSoundGroup.WOOD))
     );
 
     private ModBlocks() {
@@ -40,7 +37,7 @@ public final class ModBlocks {
         Registry.register(
                 Registries.ITEM,
                 id,
-                new BlockItem(block, new Item.Settings().registryKey(RegistryKey.of(RegistryKeys.ITEM, id)))
+            new BlockItem(block, new Item.Settings())
         );
         return block;
     }

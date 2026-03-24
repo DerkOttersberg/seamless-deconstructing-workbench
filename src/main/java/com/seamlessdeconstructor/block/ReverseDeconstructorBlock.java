@@ -14,7 +14,6 @@ import net.minecraft.block.entity.BlockEntityType;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.ItemPlacementContext;
 import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.server.world.ServerWorld;
 import net.minecraft.state.StateManager;
 import net.minecraft.state.property.BooleanProperty;
 import net.minecraft.state.property.EnumProperty;
@@ -96,14 +95,16 @@ public class ReverseDeconstructorBlock extends BlockWithEntity implements BlockE
     }
 
     @Override
-    protected void onStateReplaced(BlockState state, ServerWorld world, BlockPos pos, boolean moved) {
-        BlockEntity blockEntity = world.getBlockEntity(pos);
-        if (blockEntity instanceof ReverseDeconstructorBlockEntity reverseDeconstructorBlockEntity) {
-            ItemScatterer.spawn(world, pos, reverseDeconstructorBlockEntity);
-            world.updateComparators(pos, this);
+    protected void onStateReplaced(BlockState state, World world, BlockPos pos, BlockState newState, boolean moved) {
+        if (state.getBlock() != newState.getBlock()) {
+            BlockEntity blockEntity = world.getBlockEntity(pos);
+            if (blockEntity instanceof ReverseDeconstructorBlockEntity reverseDeconstructorBlockEntity) {
+                ItemScatterer.spawn(world, pos, reverseDeconstructorBlockEntity);
+                world.updateComparators(pos, this);
+            }
         }
 
-        super.onStateReplaced(state, world, pos, moved);
+        super.onStateReplaced(state, world, pos, newState, moved);
     }
 
     @Override
