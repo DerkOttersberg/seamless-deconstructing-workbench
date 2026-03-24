@@ -12,7 +12,7 @@ public final class ModBlockEntities {
     public static final BlockEntityType<ReverseDeconstructorBlockEntity> REVERSE_DECONSTRUCTOR_BLOCK_ENTITY =
             Registry.register(
                     Registries.BLOCK_ENTITY_TYPE,
-                    Identifier.of(SeamlessDeconstructorMod.MOD_ID, "reverse_deconstructor"),
+                    new Identifier(SeamlessDeconstructorMod.MOD_ID, "reverse_deconstructor"),
                     FabricBlockEntityTypeBuilder.create(
                             ReverseDeconstructorBlockEntity::new,
                             ModBlocks.REVERSE_DECONSTRUCTOR

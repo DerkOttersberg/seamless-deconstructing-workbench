@@ -7,8 +7,6 @@ import net.minecraft.block.Block;
 import net.minecraft.block.Blocks;
 import net.minecraft.item.BlockItem;
 import net.minecraft.item.Item;
-import net.minecraft.registry.RegistryKey;
-import net.minecraft.registry.RegistryKeys;
 import net.minecraft.registry.Registries;
 import net.minecraft.registry.Registry;
 import net.minecraft.sound.BlockSoundGroup;
@@ -26,21 +24,20 @@ public final class ModBlocks {
             .blockVision((state, world, pos) -> false)
             .allowsSpawning((state, world, pos, type) -> false)
             .strength(2.5f)
-            .sounds(BlockSoundGroup.WOOD)
-            .registryKey(RegistryKey.of(RegistryKeys.BLOCK, id)))
+                .sounds(BlockSoundGroup.WOOD))
     );
 
     private ModBlocks() {
     }
 
     private static Block registerBlock(String name, Function<Identifier, Block> factory) {
-        Identifier id = Identifier.of(SeamlessDeconstructorMod.MOD_ID, name);
+        Identifier id = new Identifier(SeamlessDeconstructorMod.MOD_ID, name);
         Block block = factory.apply(id);
         Registry.register(Registries.BLOCK, id, block);
         Registry.register(
                 Registries.ITEM,
                 id,
-                new BlockItem(block, new Item.Settings().registryKey(RegistryKey.of(RegistryKeys.ITEM, id)))
+            new BlockItem(block, new Item.Settings())
         );
         return block;
     }

@@ -2,13 +2,10 @@ package com.seamlessdeconstructor.logic;
 
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
-import net.minecraft.recipe.CraftingRecipe;
 import net.minecraft.recipe.Ingredient;
-import net.minecraft.recipe.RecipeEntry;
 import net.minecraft.recipe.RecipeManager;
-import net.minecraft.recipe.ServerRecipeManager;
 import net.minecraft.recipe.ShapedRecipe;
-import net.minecraft.recipe.input.CraftingRecipeInput;
+import net.minecraft.util.Identifier;
 import net.minecraft.server.world.ServerWorld;
 
 import java.util.ArrayList;
@@ -16,8 +13,8 @@ import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.WeakHashMap;
+import java.util.Optional;
 
 public final class DeconstructionResolver {
     private static final Map<RecipeManager, Map<Item, DeconstructionPlan>> CACHE = new WeakHashMap<>();
@@ -35,22 +32,18 @@ public final class DeconstructionResolver {
 
     private static Map<Item, DeconstructionPlan> buildCache(ServerWorld world) {
         Map<Item, DeconstructionPlan> byOutputItem = new LinkedHashMap<>();
-        ServerRecipeManager recipeManager = world.getRecipeManager();
+        RecipeManager recipeManager = world.getRecipeManager();
 
-        List<RecipeEntry<?>> recipes = new ArrayList<>(recipeManager.values());
-        recipes.sort(Comparator.comparing(entry -> entry.id().toString()));
-
-        for (RecipeEntry<?> recipeEntry : recipes) {
-            if (!(recipeEntry.value() instanceof CraftingRecipe craftingRecipe) || !(craftingRecipe instanceof ShapedRecipe shapedRecipe)) {
-                continue;
+        List<ShapedRecipe> recipes = new ArrayList<>();
+        for (var recipe : recipeManager.values()) {
+            if (recipe instanceof ShapedRecipe shapedRecipe) {
+                recipes.add(shapedRecipe);
             }
+        }
+        recipes.sort(Comparator.comparing(recipe -> recipe.getId().toString()));
 
-            ItemStack result;
-            try {
-                result = shapedRecipe.craft(buildRepresentativeInput(shapedRecipe), world.getRegistryManager());
-            } catch (Exception ignored) {
-                continue;
-            }
+        for (ShapedRecipe shapedRecipe : recipes) {
+            ItemStack result = shapedRecipe.getOutput(world.getRegistryManager()).copy();
 
             if (result.isEmpty()) {
                 continue;
@@ -58,19 +51,17 @@ public final class DeconstructionResolver {
 
             Map<Item, Integer> ingredientCount = new LinkedHashMap<>();
 
-            for (Optional<Ingredient> maybeIngredient : shapedRecipe.getIngredients()) {
-                if (maybeIngredient.isEmpty() || maybeIngredient.get().isEmpty()) {
+            for (Ingredient ingredient : shapedRecipe.getIngredients()) {
+                if (ingredient == null || ingredient.isEmpty()) {
                     continue;
                 }
 
-                Ingredient ingredient = maybeIngredient.get();
-
-                Optional<Item> candidate = ingredient.getMatchingItems().findFirst().map(registryEntry -> registryEntry.value());
-                if (candidate.isEmpty()) {
+                ItemStack[] matches = ingredient.getMatchingStacks();
+                if (matches.length == 0 || matches[0].isEmpty()) {
                     continue;
                 }
 
-                ingredientCount.merge(candidate.get(), 1, Integer::sum);
+                ingredientCount.merge(matches[0].getItem(), 1, Integer::sum);
             }
 
             if (ingredientCount.isEmpty()) {
@@ -83,7 +74,8 @@ public final class DeconstructionResolver {
                 perOutput.put(ingredientEntry.getKey(), ingredientEntry.getValue() / (double) outputCount);
             }
 
-            DeconstructionPlan candidatePlan = new DeconstructionPlan(recipeEntry.id().getValue(), perOutput);
+            Identifier recipeId = shapedRecipe.getId();
+            DeconstructionPlan candidatePlan = new DeconstructionPlan(recipeId, perOutput);
             DeconstructionPlan existingPlan = byOutputItem.get(result.getItem());
             if (existingPlan == null || shouldReplace(existingPlan, candidatePlan)) {
                 byOutputItem.put(result.getItem(), candidatePlan);
@@ -91,32 +83,6 @@ public final class DeconstructionResolver {
         }
 
         return byOutputItem;
-    }
-
-    private static CraftingRecipeInput buildRepresentativeInput(ShapedRecipe recipe) {
-        int width = Math.max(1, recipe.getWidth());
-        int height = Math.max(1, recipe.getHeight());
-
-        List<ItemStack> inputStacks = new ArrayList<>(width * height);
-        for (Optional<Ingredient> maybeIngredient : recipe.getIngredients()) {
-            if (maybeIngredient.isEmpty() || maybeIngredient.get().isEmpty()) {
-                inputStacks.add(ItemStack.EMPTY);
-                continue;
-            }
-
-            ItemStack stack = maybeIngredient.get()
-                    .getMatchingItems()
-                    .findFirst()
-                    .map(entry -> new ItemStack(entry.value()))
-                    .orElse(ItemStack.EMPTY);
-            inputStacks.add(stack);
-        }
-
-        while (inputStacks.size() < width * height) {
-            inputStacks.add(ItemStack.EMPTY);
-        }
-
-        return CraftingRecipeInput.create(width, height, inputStacks);
     }
 
     private static boolean shouldReplace(DeconstructionPlan existing, DeconstructionPlan candidate) {

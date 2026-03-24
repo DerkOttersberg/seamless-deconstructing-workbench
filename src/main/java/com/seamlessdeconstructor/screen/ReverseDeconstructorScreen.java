@@ -4,7 +4,6 @@ import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gui.screen.ingame.HandledScreen;
 import net.minecraft.entity.player.PlayerInventory;
 import net.minecraft.text.Text;
-import net.minecraft.util.math.ColorHelper;
 
 public class ReverseDeconstructorScreen extends HandledScreen<ReverseDeconstructorScreenHandler> {
     public ReverseDeconstructorScreen(ReverseDeconstructorScreenHandler handler, PlayerInventory inventory, Text title) {
@@ -25,12 +24,12 @@ public class ReverseDeconstructorScreen extends HandledScreen<ReverseDeconstruct
         int x = this.x;
         int y = this.y;
 
-        int panelTop = ColorHelper.getArgb(255, 36, 34, 28);
-        int panelBottom = ColorHelper.getArgb(255, 24, 22, 18);
+        int panelTop = argb(255, 36, 34, 28);
+        int panelBottom = argb(255, 24, 22, 18);
         context.fillGradient(x, y, x + this.backgroundWidth, y + this.backgroundHeight, panelTop, panelBottom);
 
-        int border = ColorHelper.getArgb(255, 110, 96, 74);
-        context.drawStrokedRectangle(x, y, this.backgroundWidth, this.backgroundHeight, border);
+        int border = argb(255, 110, 96, 74);
+        drawStrokedRectangle(context, x, y, this.backgroundWidth, this.backgroundHeight, border);
 
         drawSlot(context, x + 29, y + 24, 18, 18);
         drawSlot(context, x + 29, y + 42, 18, 18);
@@ -56,35 +55,46 @@ public class ReverseDeconstructorScreen extends HandledScreen<ReverseDeconstruct
 
         int arrowLeft = x + 58;
         int arrowTop = y + 37;
-        context.fill(arrowLeft, arrowTop, arrowLeft + 24, arrowTop + 10, ColorHelper.getArgb(255, 56, 50, 40));
+        context.fill(arrowLeft, arrowTop, arrowLeft + 24, arrowTop + 10, argb(255, 56, 50, 40));
 
         if (handler.isProcessing()) {
             int progress = handler.getScaledProgress();
-            context.fill(arrowLeft, arrowTop, arrowLeft + progress, arrowTop + 10, ColorHelper.getArgb(255, 199, 173, 111));
+            context.fill(arrowLeft, arrowTop, arrowLeft + progress, arrowTop + 10, argb(255, 199, 173, 111));
         }
     }
 
     private static void drawBookHint(DrawContext context, int x, int y) {
-        int outline = ColorHelper.getArgb(170, 174, 156, 106);
-        int page = ColorHelper.getArgb(120, 220, 210, 182);
-        int spine = ColorHelper.getArgb(170, 126, 102, 72);
+        int outline = argb(170, 174, 156, 106);
+        int page = argb(120, 220, 210, 182);
+        int spine = argb(170, 126, 102, 72);
 
         context.drawVerticalLine(x + 7, y + 5, y + 12, spine);
         context.drawVerticalLine(x + 8, y + 5, y + 12, spine);
-        context.drawStrokedRectangle(x + 6, y + 4, 7, 10, outline);
+        drawStrokedRectangle(context, x + 6, y + 4, 7, 10, outline);
         context.fill(x + 9, y + 6, x + 12, y + 12, page);
     }
 
     private static void drawSlot(DrawContext context, int x, int y, int width, int height) {
-        int outer = ColorHelper.getArgb(255, 20, 18, 14);
-        int inner = ColorHelper.getArgb(255, 58, 54, 44);
+        int outer = argb(255, 20, 18, 14);
+        int inner = argb(255, 58, 54, 44);
         context.fill(x, y, x + width, y + height, outer);
-        context.drawStrokedRectangle(x, y, width, height, inner);
+        drawStrokedRectangle(context, x, y, width, height, inner);
+    }
+
+    private static int argb(int a, int r, int g, int b) {
+        return (a & 255) << 24 | (r & 255) << 16 | (g & 255) << 8 | (b & 255);
+    }
+
+    private static void drawStrokedRectangle(DrawContext context, int x, int y, int width, int height, int color) {
+        context.fill(x, y, x + width, y + 1, color);
+        context.fill(x, y + height - 1, x + width, y + height, color);
+        context.fill(x, y, x + 1, y + height, color);
+        context.fill(x + width - 1, y, x + width, y + height, color);
     }
 
     @Override
     public void render(DrawContext context, int mouseX, int mouseY, float delta) {
-        renderBackground(context, mouseX, mouseY, delta);
+        renderBackground(context);
         super.render(context, mouseX, mouseY, delta);
         drawMouseoverTooltip(context, mouseX, mouseY);
     }

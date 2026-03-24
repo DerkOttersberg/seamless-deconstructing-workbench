@@ -11,9 +11,9 @@ public final class ModScreenHandlers {
     public static final ScreenHandlerType<ReverseDeconstructorScreenHandler> REVERSE_DECONSTRUCTOR_SCREEN_HANDLER =
             Registry.register(
                     Registries.SCREEN_HANDLER,
-                    Identifier.of(SeamlessDeconstructorMod.MOD_ID, "reverse_deconstructor"),
-                    new ScreenHandlerType<>((syncId, playerInventory) ->
-                            new ReverseDeconstructorScreenHandler(syncId, playerInventory),
+                    new Identifier(SeamlessDeconstructorMod.MOD_ID, "reverse_deconstructor"),
+                    new ScreenHandlerType<ReverseDeconstructorScreenHandler>(
+                            ReverseDeconstructorScreenHandler::new,
                             FeatureFlags.VANILLA_FEATURES
                     )
             );

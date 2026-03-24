@@ -11,30 +11,32 @@ import net.fabricmc.fabric.api.networking.v1.PlayerLookup;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.entity.BlockEntity;
-import net.minecraft.component.DataComponentTypes;
-import net.minecraft.component.type.ItemEnchantmentsComponent;
+import net.minecraft.enchantment.Enchantment;
+import net.minecraft.enchantment.EnchantmentHelper;
+import net.minecraft.enchantment.EnchantmentLevelEntry;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.entity.player.PlayerInventory;
 import net.minecraft.inventory.Inventories;
 import net.minecraft.inventory.SidedInventory;
 import net.minecraft.item.Item;
+import net.minecraft.item.EnchantedBookItem;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
+import net.minecraft.nbt.NbtCompound;
 import net.minecraft.network.packet.s2c.play.BlockEntityUpdateS2CPacket;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.screen.ArrayPropertyDelegate;
 import net.minecraft.screen.NamedScreenHandlerFactory;
 import net.minecraft.screen.PropertyDelegate;
 import net.minecraft.screen.ScreenHandler;
-import net.minecraft.registry.RegistryWrapper;
 import net.minecraft.server.world.ServerWorld;
-import net.minecraft.storage.ReadView;
-import net.minecraft.storage.WriteView;
 import net.minecraft.text.Text;
 import net.minecraft.util.collection.DefaultedList;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Direction;
 import net.minecraft.world.World;
+
+import java.util.Map.Entry;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -297,7 +299,7 @@ public class ReverseDeconstructorBlockEntity extends BlockEntity implements Impl
     }
 
     private boolean canExtractEnchantments(ItemStack input) {
-        ItemEnchantmentsComponent enchantments = input.getOrDefault(DataComponentTypes.ENCHANTMENTS, ItemEnchantmentsComponent.DEFAULT);
+        Map<Enchantment, Integer> enchantments = EnchantmentHelper.get(input);
         if (enchantments.isEmpty()) {
             return true;
         }
@@ -307,7 +309,7 @@ public class ReverseDeconstructorBlockEntity extends BlockEntity implements Impl
     }
 
     private boolean extractEnchantmentsToBook(ItemStack input) {
-        ItemEnchantmentsComponent enchantments = input.getOrDefault(DataComponentTypes.ENCHANTMENTS, ItemEnchantmentsComponent.DEFAULT);
+        Map<Enchantment, Integer> enchantments = EnchantmentHelper.get(input);
         if (enchantments.isEmpty()) {
             return true;
         }
@@ -318,7 +320,9 @@ public class ReverseDeconstructorBlockEntity extends BlockEntity implements Impl
         }
 
         ItemStack enchantedBook = new ItemStack(Items.ENCHANTED_BOOK, 1);
-        enchantedBook.set(DataComponentTypes.STORED_ENCHANTMENTS, enchantments);
+        for (Entry<Enchantment, Integer> entry : enchantments.entrySet()) {
+            EnchantedBookItem.addEnchantment(enchantedBook, new EnchantmentLevelEntry(entry.getKey(), entry.getValue()));
+        }
 
         ItemStack leftover = insertOutputStack(enchantedBook);
         if (!leftover.isEmpty()) {
@@ -348,7 +352,7 @@ public class ReverseDeconstructorBlockEntity extends BlockEntity implements Impl
                 return ItemStack.EMPTY;
             }
 
-            if (ItemStack.areItemsAndComponentsEqual(stack, remaining) && stack.getCount() < stack.getMaxCount()) {
+            if (ItemStack.canCombine(stack, remaining) && stack.getCount() < stack.getMaxCount()) {
                 int insert = Math.min(stack.getMaxCount() - stack.getCount(), remaining.getCount());
                 stack.increment(insert);
                 remaining.decrement(insert);
@@ -367,22 +371,22 @@ public class ReverseDeconstructorBlockEntity extends BlockEntity implements Impl
     }
 
     @Override
-    protected void readData(ReadView view) {
-        super.readData(view);
+    public void readNbt(NbtCompound nbt) {
+        super.readNbt(nbt);
         for (int i = 0; i < this.items.size(); i++) {
             this.items.set(i, ItemStack.EMPTY);
         }
-        Inventories.readData(view, items);
-        this.progress = view.getInt("Progress", 0);
-        this.maxProgress = view.getInt("MaxProgress", ModConfig.processTicks());
+        Inventories.readNbt(nbt, items);
+        this.progress = nbt.getInt("Progress");
+        this.maxProgress = nbt.contains("MaxProgress") ? nbt.getInt("MaxProgress") : ModConfig.processTicks();
     }
 
     @Override
-    protected void writeData(WriteView view) {
-        super.writeData(view);
-        Inventories.writeData(view, items);
-        view.putInt("Progress", progress);
-        view.putInt("MaxProgress", maxProgress);
+    protected void writeNbt(NbtCompound nbt) {
+        super.writeNbt(nbt);
+        Inventories.writeNbt(nbt, items);
+        nbt.putInt("Progress", progress);
+        nbt.putInt("MaxProgress", maxProgress);
     }
 
     @Override
@@ -406,8 +410,8 @@ public class ReverseDeconstructorBlockEntity extends BlockEntity implements Impl
     }
 
     @Override
-    public net.minecraft.nbt.NbtCompound toInitialChunkDataNbt(RegistryWrapper.WrapperLookup registries) {
-        return createNbt(registries);
+    public NbtCompound toInitialChunkDataNbt() {
+        return createNbt();
     }
 
     public ItemStack getRenderInputStack() {
