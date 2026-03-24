@@ -1,0 +1,13 @@
+{
+  "variants": {
+    "facing=north,active=false": { "model": "seamlessdeconstructor:block/reverse_deconstructor_idle", "uvlock": true },
+    "facing=east,active=false": { "model": "seamlessdeconstructor:block/reverse_deconstructor_idle", "y": 90, "uvlock": true },
+    "facing=south,active=false": { "model": "seamlessdeconstructor:block/reverse_deconstructor_idle", "y": 180, "uvlock": true },
+    "facing=west,active=false": { "model": "seamlessdeconstructor:block/reverse_deconstructor_idle", "y": 270, "uvlock": true },
+
+    "facing=north,active=true": { "model": "seamlessdeconstructor:block/reverse_deconstructor_active", "uvlock": true },
+    "facing=east,active=true": { "model": "seamlessdeconstructor:block/reverse_deconstructor_active", "y": 90, "uvlock": true },
+    "facing=south,active=true": { "model": "seamlessdeconstructor:block/reverse_deconstructor_active", "y": 180, "uvlock": true },
+    "facing=west,active=true": { "model": "seamlessdeconstructor:block/reverse_deconstructor_active", "y": 270, "uvlock": true }
+  }
+}
