@@ -1,7 +1,7 @@
 {
-  "block.seamlessdeconstructor.reverse_deconstructor": "Reverse Deconstructor",
-  "item.seamlessdeconstructor.reverse_deconstructor": "Reverse Deconstructor",
-  "screen.seamlessdeconstructor.reverse_deconstructor": "Reverse Deconstructor",
+  "block.seamlessdeconstructor.reverse_deconstructor": "Salvage Workbench",
+  "item.seamlessdeconstructor.reverse_deconstructor": "Salvage Workbench",
+  "screen.seamlessdeconstructor.reverse_deconstructor": "Salvage Workbench",
   "config.seamlessdeconstructor.title": "Seamless Deconstructor Config",
   "config.seamlessdeconstructor.category.general": "General",
   "config.seamlessdeconstructor.process_ticks": "Process Time",
