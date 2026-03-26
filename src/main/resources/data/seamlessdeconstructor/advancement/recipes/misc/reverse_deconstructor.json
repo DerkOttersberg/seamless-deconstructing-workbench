@@ -1,0 +1,37 @@
+{
+  "parent": "minecraft:recipes/root",
+  "criteria": {
+    "has_stone_bricks": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          { "items": "minecraft:stone_bricks" }
+        ]
+      }
+    },
+    "has_planks": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          { "tag": "minecraft:planks" }
+        ]
+      }
+    },
+    "has_cobblestone": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          { "items": "minecraft:cobblestone" }
+        ]
+      }
+    }
+  },
+  "requirements": [
+    ["has_stone_bricks", "has_planks", "has_cobblestone"]
+  ],
+  "rewards": {
+    "recipes": [
+      "seamlessdeconstructor:reverse_deconstructor"
+    ]
+  }
+}
