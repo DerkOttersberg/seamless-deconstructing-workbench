@@ -2,49 +2,39 @@ package com.seamlessdeconstructor.registry;
 
 import com.seamlessdeconstructor.SeamlessDeconstructorMod;
 import com.seamlessdeconstructor.block.ReverseDeconstructorBlock;
-import net.minecraft.block.AbstractBlock;
-import net.minecraft.block.Block;
-import net.minecraft.block.Blocks;
-import net.minecraft.item.BlockItem;
-import net.minecraft.item.Item;
-import net.minecraft.registry.RegistryKey;
-import net.minecraft.registry.RegistryKeys;
-import net.minecraft.registry.Registries;
-import net.minecraft.registry.Registry;
-import net.minecraft.sound.BlockSoundGroup;
-import net.minecraft.util.Identifier;
-
-import java.util.function.Function;
+import net.minecraft.world.item.BlockItem;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.SoundType;
+import net.minecraft.world.level.block.state.BlockBehaviour;
+import net.minecraftforge.eventbus.api.IEventBus;
+import net.minecraftforge.registries.DeferredRegister;
+import net.minecraftforge.registries.ForgeRegistries;
+import net.minecraftforge.registries.RegistryObject;
 
 public final class ModBlocks {
-    public static final Block REVERSE_DECONSTRUCTOR = registerBlock(
-            "reverse_deconstructor",
-        id -> new ReverseDeconstructorBlock(AbstractBlock.Settings.copy(Blocks.CRAFTING_TABLE)
-            .nonOpaque()
-            .solidBlock((state, world, pos) -> false)
-            .suffocates((state, world, pos) -> false)
-            .blockVision((state, world, pos) -> false)
-            .allowsSpawning((state, world, pos, type) -> false)
+    public static final DeferredRegister<Block> BLOCKS = DeferredRegister.create(ForgeRegistries.BLOCKS, SeamlessDeconstructorMod.MOD_ID);
+    public static final DeferredRegister<Item> ITEMS = DeferredRegister.create(ForgeRegistries.ITEMS, SeamlessDeconstructorMod.MOD_ID);
+
+    public static final RegistryObject<Block> REVERSE_DECONSTRUCTOR = BLOCKS.register(
+        "reverse_deconstructor",
+        () -> new ReverseDeconstructorBlock(BlockBehaviour.Properties.copy(Blocks.CRAFTING_TABLE)
+            .noOcclusion()
             .strength(2.5f)
-            .sounds(BlockSoundGroup.WOOD)
-            .registryKey(RegistryKey.of(RegistryKeys.BLOCK, id)))
+            .sound(SoundType.WOOD))
+    );
+
+    public static final RegistryObject<Item> REVERSE_DECONSTRUCTOR_ITEM = ITEMS.register(
+        "reverse_deconstructor",
+        () -> new BlockItem(REVERSE_DECONSTRUCTOR.get(), new Item.Properties())
     );
 
     private ModBlocks() {
     }
 
-    private static Block registerBlock(String name, Function<Identifier, Block> factory) {
-        Identifier id = Identifier.of(SeamlessDeconstructorMod.MOD_ID, name);
-        Block block = factory.apply(id);
-        Registry.register(Registries.BLOCK, id, block);
-        Registry.register(
-                Registries.ITEM,
-                id,
-                new BlockItem(block, new Item.Settings().registryKey(RegistryKey.of(RegistryKeys.ITEM, id)))
-        );
-        return block;
-    }
-
-    public static void initialize() {
+    public static void initialize(IEventBus modEventBus) {
+        BLOCKS.register(modEventBus);
+        ITEMS.register(modEventBus);
     }
 }

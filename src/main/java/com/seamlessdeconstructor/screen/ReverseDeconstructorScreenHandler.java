@@ -1,48 +1,48 @@
 package com.seamlessdeconstructor.screen;
 
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.entity.player.PlayerInventory;
-import net.minecraft.inventory.Inventory;
-import net.minecraft.inventory.SimpleInventory;
-import net.minecraft.item.ItemStack;
-import net.minecraft.item.Items;
-import net.minecraft.screen.ArrayPropertyDelegate;
-import net.minecraft.screen.PropertyDelegate;
-import net.minecraft.screen.ScreenHandler;
-import net.minecraft.screen.slot.Slot;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.entity.player.Inventory;
+import net.minecraft.world.Container;
+import net.minecraft.world.SimpleContainer;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
+import net.minecraft.world.inventory.SimpleContainerData;
+import net.minecraft.world.inventory.ContainerData;
+import net.minecraft.world.inventory.AbstractContainerMenu;
+import net.minecraft.world.inventory.Slot;
 
-public class ReverseDeconstructorScreenHandler extends ScreenHandler {
+public class ReverseDeconstructorScreenHandler extends AbstractContainerMenu {
     private static final int INVENTORY_SIZE = 8;
 
-    private final Inventory inventory;
-    private final PropertyDelegate propertyDelegate;
+    private final Container inventory;
+    private final ContainerData propertyDelegate;
 
-    public ReverseDeconstructorScreenHandler(int syncId, PlayerInventory playerInventory) {
-        this(syncId, playerInventory, new SimpleInventory(INVENTORY_SIZE), new ArrayPropertyDelegate(2));
+    public ReverseDeconstructorScreenHandler(int syncId, Inventory playerInventory) {
+        this(syncId, playerInventory, new SimpleContainer(INVENTORY_SIZE), new SimpleContainerData(2));
     }
 
-    public ReverseDeconstructorScreenHandler(int syncId, PlayerInventory playerInventory, Inventory inventory, PropertyDelegate propertyDelegate) {
-        super(ModScreenHandlers.REVERSE_DECONSTRUCTOR_SCREEN_HANDLER, syncId);
-        checkSize(inventory, INVENTORY_SIZE);
+    public ReverseDeconstructorScreenHandler(int syncId, Inventory playerInventory, Container inventory, ContainerData propertyDelegate) {
+        super(ModScreenHandlers.REVERSE_DECONSTRUCTOR_SCREEN_HANDLER.get(), syncId);
+        checkContainerSize(inventory, INVENTORY_SIZE);
         this.inventory = inventory;
         this.propertyDelegate = propertyDelegate;
 
-        inventory.onOpen(playerInventory.player);
+        inventory.startOpen(playerInventory.player);
 
         addSlot(new Slot(inventory, 0, 30, 24) {
             @Override
-            public boolean canInsert(ItemStack stack) {
-                return !stack.isOf(Items.BOOK);
+            public boolean mayPlace(ItemStack stack) {
+                return !stack.is(Items.BOOK);
             }
         });
         addSlot(new Slot(inventory, 1, 30, 42) {
             @Override
-            public boolean canInsert(ItemStack stack) {
-                return stack.isOf(Items.BOOK);
+            public boolean mayPlace(ItemStack stack) {
+                return stack.is(Items.BOOK);
             }
 
             @Override
-            public int getMaxItemCount() {
+            public int getMaxStackSize() {
                 return 1;
             }
         });
@@ -53,7 +53,7 @@ public class ReverseDeconstructorScreenHandler extends ScreenHandler {
                 final int slotIndex = outputIndex++;
                 addSlot(new Slot(inventory, slotIndex, 98 + column * 18, 25 + row * 18) {
                     @Override
-                    public boolean canInsert(ItemStack stack) {
+                    public boolean mayPlace(ItemStack stack) {
                         return false;
                     }
                 });
@@ -70,58 +70,58 @@ public class ReverseDeconstructorScreenHandler extends ScreenHandler {
             addSlot(new Slot(playerInventory, column, 8 + column * 18, 142));
         }
 
-        addProperties(propertyDelegate);
+        addDataSlots(propertyDelegate);
     }
 
     @Override
-    public ItemStack quickMove(PlayerEntity player, int index) {
+    public ItemStack quickMoveStack(Player player, int index) {
         ItemStack newStack = ItemStack.EMPTY;
         Slot slot = this.slots.get(index);
 
-        if (slot != null && slot.hasStack()) {
-            ItemStack originalStack = slot.getStack();
+        if (slot != null && slot.hasItem()) {
+            ItemStack originalStack = slot.getItem();
             newStack = originalStack.copy();
 
             if (index < INVENTORY_SIZE) {
-                if (!insertItem(originalStack, INVENTORY_SIZE, this.slots.size(), true)) {
+                if (!moveItemStackTo(originalStack, INVENTORY_SIZE, this.slots.size(), true)) {
                     return ItemStack.EMPTY;
                 }
-                slot.onQuickTransfer(originalStack, newStack);
+                slot.onQuickCraft(originalStack, newStack);
             } else {
-                if (originalStack.isOf(Items.BOOK)) {
-                    if (!insertItem(originalStack, 1, 2, false)) {
+                if (originalStack.is(Items.BOOK)) {
+                    if (!moveItemStackTo(originalStack, 1, 2, false)) {
                         return ItemStack.EMPTY;
                     }
-                } else if (!insertItem(originalStack, 0, 1, false)) {
+                } else if (!moveItemStackTo(originalStack, 0, 1, false)) {
                     return ItemStack.EMPTY;
                 }
             }
 
             if (originalStack.isEmpty()) {
-                slot.setStack(ItemStack.EMPTY);
+                slot.set(ItemStack.EMPTY);
             } else {
-                slot.markDirty();
+                slot.setChanged();
             }
 
             if (originalStack.getCount() == newStack.getCount()) {
                 return ItemStack.EMPTY;
             }
 
-            slot.onTakeItem(player, originalStack);
+            slot.onTake(player, originalStack);
         }
 
         return newStack;
     }
 
     @Override
-    public boolean canUse(PlayerEntity player) {
-        return this.inventory.canPlayerUse(player);
+    public boolean stillValid(Player player) {
+        return this.inventory.stillValid(player);
     }
 
     @Override
-    public void onClosed(PlayerEntity player) {
-        super.onClosed(player);
-        this.inventory.onClose(player);
+    public void removed(Player player) {
+        super.removed(player);
+        this.inventory.stopOpen(player);
     }
 
     public boolean isProcessing() {

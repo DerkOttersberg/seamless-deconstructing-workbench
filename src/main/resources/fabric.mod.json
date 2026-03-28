@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "id": "seamlessdeconstructor",
   "version": "${version}",
-  "name": "Seamless Deconstructor",
+  "name": "Salvage Workbench 1.21.11 Fabric",
   "description": "Adds a reverse crafting table that deconstructs crafted items back into ingredients with configurable loss.",
   "authors": [
     "derko"

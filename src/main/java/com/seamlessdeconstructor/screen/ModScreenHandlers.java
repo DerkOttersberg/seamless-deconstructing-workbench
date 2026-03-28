@@ -1,26 +1,27 @@
 package com.seamlessdeconstructor.screen;
 
 import com.seamlessdeconstructor.SeamlessDeconstructorMod;
-import net.minecraft.registry.Registries;
-import net.minecraft.registry.Registry;
-import net.minecraft.resource.featuretoggle.FeatureFlags;
-import net.minecraft.screen.ScreenHandlerType;
-import net.minecraft.util.Identifier;
+import net.minecraft.world.inventory.MenuType;
+import net.minecraftforge.common.extensions.IForgeMenuType;
+import net.minecraftforge.eventbus.api.IEventBus;
+import net.minecraftforge.registries.DeferredRegister;
+import net.minecraftforge.registries.ForgeRegistries;
+import net.minecraftforge.registries.RegistryObject;
 
 public final class ModScreenHandlers {
-    public static final ScreenHandlerType<ReverseDeconstructorScreenHandler> REVERSE_DECONSTRUCTOR_SCREEN_HANDLER =
-            Registry.register(
-                    Registries.SCREEN_HANDLER,
-                    Identifier.of(SeamlessDeconstructorMod.MOD_ID, "reverse_deconstructor"),
-                    new ScreenHandlerType<>((syncId, playerInventory) ->
-                            new ReverseDeconstructorScreenHandler(syncId, playerInventory),
-                            FeatureFlags.VANILLA_FEATURES
-                    )
-            );
+    public static final DeferredRegister<MenuType<?>> MENUS =
+        DeferredRegister.create(ForgeRegistries.MENU_TYPES, SeamlessDeconstructorMod.MOD_ID);
+
+    public static final RegistryObject<MenuType<ReverseDeconstructorScreenHandler>> REVERSE_DECONSTRUCTOR_SCREEN_HANDLER =
+        MENUS.register(
+            "reverse_deconstructor",
+            () -> IForgeMenuType.create((syncId, playerInventory, data) -> new ReverseDeconstructorScreenHandler(syncId, playerInventory))
+        );
 
     private ModScreenHandlers() {
     }
 
-    public static void initialize() {
+    public static void initialize(IEventBus modEventBus) {
+        MENUS.register(modEventBus);
     }
 }

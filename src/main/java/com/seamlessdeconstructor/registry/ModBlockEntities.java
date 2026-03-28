@@ -2,26 +2,26 @@ package com.seamlessdeconstructor.registry;
 
 import com.seamlessdeconstructor.SeamlessDeconstructorMod;
 import com.seamlessdeconstructor.block.entity.ReverseDeconstructorBlockEntity;
-import net.fabricmc.fabric.api.object.builder.v1.block.entity.FabricBlockEntityTypeBuilder;
-import net.minecraft.block.entity.BlockEntityType;
-import net.minecraft.registry.Registries;
-import net.minecraft.registry.Registry;
-import net.minecraft.util.Identifier;
+import net.minecraft.world.level.block.entity.BlockEntityType;
+import net.minecraftforge.eventbus.api.IEventBus;
+import net.minecraftforge.registries.DeferredRegister;
+import net.minecraftforge.registries.ForgeRegistries;
+import net.minecraftforge.registries.RegistryObject;
 
 public final class ModBlockEntities {
-    public static final BlockEntityType<ReverseDeconstructorBlockEntity> REVERSE_DECONSTRUCTOR_BLOCK_ENTITY =
-            Registry.register(
-                    Registries.BLOCK_ENTITY_TYPE,
-                    Identifier.of(SeamlessDeconstructorMod.MOD_ID, "reverse_deconstructor"),
-                    FabricBlockEntityTypeBuilder.create(
-                            ReverseDeconstructorBlockEntity::new,
-                            ModBlocks.REVERSE_DECONSTRUCTOR
-                    ).build()
-            );
+    public static final DeferredRegister<BlockEntityType<?>> BLOCK_ENTITIES =
+        DeferredRegister.create(ForgeRegistries.BLOCK_ENTITY_TYPES, SeamlessDeconstructorMod.MOD_ID);
+
+    public static final RegistryObject<BlockEntityType<ReverseDeconstructorBlockEntity>> REVERSE_DECONSTRUCTOR_BLOCK_ENTITY =
+        BLOCK_ENTITIES.register(
+            "reverse_deconstructor",
+            () -> BlockEntityType.Builder.of(ReverseDeconstructorBlockEntity::new, ModBlocks.REVERSE_DECONSTRUCTOR.get()).build(null)
+        );
 
     private ModBlockEntities() {
     }
 
-    public static void initialize() {
+    public static void initialize(IEventBus modEventBus) {
+        BLOCK_ENTITIES.register(modEventBus);
     }
 }

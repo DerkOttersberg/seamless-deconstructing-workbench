@@ -4,26 +4,34 @@ import com.seamlessdeconstructor.config.ModConfig;
 import com.seamlessdeconstructor.registry.ModBlockEntities;
 import com.seamlessdeconstructor.registry.ModBlocks;
 import com.seamlessdeconstructor.screen.ModScreenHandlers;
-import net.fabricmc.api.ModInitializer;
-import net.fabricmc.fabric.api.itemgroup.v1.ItemGroupEvents;
-import net.minecraft.item.ItemGroups;
+import net.minecraft.world.item.CreativeModeTabs;
+import net.minecraftforge.event.BuildCreativeModeTabContentsEvent;
+import net.minecraftforge.eventbus.api.IEventBus;
+import net.minecraftforge.fml.common.Mod;
+import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class SeamlessDeconstructorMod implements ModInitializer {
+@Mod(SeamlessDeconstructorMod.MOD_ID)
+public class SeamlessDeconstructorMod {
     public static final String MOD_ID = "seamlessdeconstructor";
     public static final Logger LOGGER = LoggerFactory.getLogger(MOD_ID);
 
-    @Override
-    public void onInitialize() {
+    public SeamlessDeconstructorMod() {
+        IEventBus modEventBus = FMLJavaModLoadingContext.get().getModEventBus();
+
         ModConfig.load();
-        ModBlocks.initialize();
-        ModBlockEntities.initialize();
-        ModScreenHandlers.initialize();
+        ModBlocks.initialize(modEventBus);
+        ModBlockEntities.initialize(modEventBus);
+        ModScreenHandlers.initialize(modEventBus);
+        modEventBus.addListener(this::onBuildCreativeTabContents);
 
-        ItemGroupEvents.modifyEntriesEvent(ItemGroups.FUNCTIONAL).register(entries ->
-                entries.add(ModBlocks.REVERSE_DECONSTRUCTOR));
+        LOGGER.info("Salvage Workbench initialized.");
+    }
 
-        LOGGER.info("Seamless Deconstructor initialized.");
+    private void onBuildCreativeTabContents(BuildCreativeModeTabContentsEvent event) {
+        if (event.getTabKey() == CreativeModeTabs.FUNCTIONAL_BLOCKS) {
+            event.accept(ModBlocks.REVERSE_DECONSTRUCTOR_ITEM);
+        }
     }
 }

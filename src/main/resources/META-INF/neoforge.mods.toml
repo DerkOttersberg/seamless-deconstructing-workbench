@@ -1,0 +1,32 @@
+modLoader = "javafml"
+loaderVersion = "${loader_version_range}"
+license = "MIT"
+
+[[mods]]
+modId = "seamlessdeconstructor"
+version = "${version}"
+displayName = "Salvage Workbench 1.20.1 Forge"
+description = '''
+Adds a reverse crafting table that deconstructs crafted items back into ingredients with configurable loss.
+'''
+
+[[dependencies.seamlessdeconstructor]]
+modId = "forge"
+type = "required"
+versionRange = "${neo_version_range}"
+ordering = "NONE"
+side = "BOTH"
+
+[[dependencies.seamlessdeconstructor]]
+modId = "minecraft"
+type = "required"
+versionRange = "${minecraft_version_range}"
+ordering = "NONE"
+side = "BOTH"
+
+[[dependencies.seamlessdeconstructor]]
+modId = "seamlessapi"
+type = "required"
+versionRange = "[1.0.0,)"
+ordering = "AFTER"
+side = "BOTH"

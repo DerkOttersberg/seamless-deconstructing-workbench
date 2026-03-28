@@ -1,16 +1,16 @@
 package com.seamlessdeconstructor.util;
 
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.inventory.Inventories;
-import net.minecraft.inventory.Inventory;
-import net.minecraft.item.ItemStack;
-import net.minecraft.util.collection.DefaultedList;
+import net.minecraft.world.Container;
+import net.minecraft.world.ContainerHelper;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.core.NonNullList;
 
-public interface ImplementedInventory extends Inventory {
-    DefaultedList<ItemStack> getItems();
+public interface ImplementedInventory extends Container {
+    NonNullList<ItemStack> getItems();
 
     @Override
-    default int size() {
+    default int getContainerSize() {
         return getItems().size();
     }
 
@@ -25,33 +25,35 @@ public interface ImplementedInventory extends Inventory {
     }
 
     @Override
-    default ItemStack getStack(int slot) {
+    default ItemStack getItem(int slot) {
         return getItems().get(slot);
     }
 
     @Override
-    default ItemStack removeStack(int slot, int amount) {
-        return Inventories.splitStack(getItems(), slot, amount);
+    default ItemStack removeItem(int slot, int amount) {
+        return ContainerHelper.removeItem(getItems(), slot, amount);
     }
 
     @Override
-    default ItemStack removeStack(int slot) {
-        return Inventories.removeStack(getItems(), slot);
+    default ItemStack removeItemNoUpdate(int slot) {
+        return ContainerHelper.takeItem(getItems(), slot);
     }
 
     @Override
-    default void setStack(int slot, ItemStack stack) {
+    default void setItem(int slot, ItemStack stack) {
         getItems().set(slot, stack);
-        stack.capCount(getMaxCount(stack));
+        if (stack.getCount() > getMaxStackSize()) {
+            stack.setCount(getMaxStackSize());
+        }
     }
 
     @Override
-    default void clear() {
+    default void clearContent() {
         getItems().clear();
     }
 
     @Override
-    default boolean canPlayerUse(PlayerEntity player) {
+    default boolean stillValid(Player player) {
         return true;
     }
 }

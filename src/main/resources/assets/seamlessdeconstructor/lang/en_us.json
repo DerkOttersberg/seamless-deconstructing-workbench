@@ -2,7 +2,7 @@
   "block.seamlessdeconstructor.reverse_deconstructor": "Salvage Workbench",
   "item.seamlessdeconstructor.reverse_deconstructor": "Salvage Workbench",
   "screen.seamlessdeconstructor.reverse_deconstructor": "Salvage Workbench",
-  "config.seamlessdeconstructor.title": "Seamless Deconstructor Config",
+  "config.seamlessdeconstructor.title": "Salvage Workbench Config",
   "config.seamlessdeconstructor.category.general": "General",
   "config.seamlessdeconstructor.process_ticks": "Process Time",
   "config.seamlessdeconstructor.min_loss": "Minimum Loss",

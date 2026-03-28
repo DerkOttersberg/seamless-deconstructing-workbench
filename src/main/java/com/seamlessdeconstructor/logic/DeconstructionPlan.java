@@ -1,22 +1,22 @@
 package com.seamlessdeconstructor.logic;
 
-import net.minecraft.item.Item;
-import net.minecraft.util.Identifier;
-import net.minecraft.util.math.random.Random;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.util.RandomSource;
+import net.minecraft.world.item.Item;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
 
 public final class DeconstructionPlan {
-    private final Identifier recipeId;
+    private final ResourceLocation recipeId;
     private final Map<Item, Double> unitsPerOutput;
 
-    public DeconstructionPlan(Identifier recipeId, Map<Item, Double> unitsPerOutput) {
+    public DeconstructionPlan(ResourceLocation recipeId, Map<Item, Double> unitsPerOutput) {
         this.recipeId = recipeId;
         this.unitsPerOutput = Map.copyOf(unitsPerOutput);
     }
 
-    public Identifier recipeId() {
+    public ResourceLocation recipeId() {
         return recipeId;
     }
 
@@ -36,7 +36,7 @@ public final class DeconstructionPlan {
         return result;
     }
 
-    public Map<Item, Integer> rollOutput(Random random, double minLoss, double maxLoss) {
+    public Map<Item, Integer> rollOutput(RandomSource random, double minLoss, double maxLoss) {
         double lower = Math.min(minLoss, maxLoss);
         double upper = Math.max(minLoss, maxLoss);
         double loss = lower + random.nextDouble() * (upper - lower);

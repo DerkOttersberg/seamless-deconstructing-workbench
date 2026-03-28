@@ -2,7 +2,7 @@ package com.seamlessdeconstructor.config;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-import net.fabricmc.loader.api.FabricLoader;
+import net.minecraftforge.fml.loading.FMLPaths;
 
 import java.io.IOException;
 import java.io.Reader;
@@ -12,7 +12,7 @@ import java.nio.file.Path;
 
 public final class ModConfig {
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
-    private static final Path PATH = FabricLoader.getInstance().getConfigDir().resolve("seamlessdeconstructor.json");
+    private static final Path PATH = FMLPaths.CONFIGDIR.get().resolve("seamlessdeconstructor.json");
 
     private static ModConfigData data = new ModConfigData();
 
