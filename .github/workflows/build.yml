@@ -1,0 +1,64 @@
+name: build
+
+on:
+  push:
+    branches: [main, 'port/**', 'support/**', 'feat/**', 'fix/**', 'release/**']
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  wrapper-validation:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: suite/seamless-deconstructing-workbench
+      - uses: gradle/actions/wrapper-validation@v4
+
+  loader-builds:
+    strategy:
+      fail-fast: false
+      matrix:
+        loader: [fabric, forge, neoforge]
+    runs-on: ubuntu-24.04
+    defaults:
+      run:
+        working-directory: suite/seamless-deconstructing-workbench
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: suite/seamless-deconstructing-workbench
+      - uses: actions/checkout@v4
+        with:
+          repository: DerkOttersberg/Seamless-API
+          ref: 6bd3c1260323c04f0dd40da8eb040bb3480e811e
+          path: suite/Seamless-API
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '25'
+      - uses: gradle/actions/setup-gradle@v4
+      - run: ./gradlew :common:check :${{ matrix.loader }}:check :${{ matrix.loader }}:build
+
+  verification:
+    runs-on: ubuntu-24.04
+    defaults:
+      run:
+        working-directory: suite/seamless-deconstructing-workbench
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: suite/seamless-deconstructing-workbench
+      - uses: actions/checkout@v4
+        with:
+          repository: DerkOttersberg/Seamless-API
+          ref: 6bd3c1260323c04f0dd40da8eb040bb3480e811e
+          path: suite/Seamless-API
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '25'
+      - uses: gradle/actions/setup-gradle@v4
+      - run: ./gradlew clean check build
