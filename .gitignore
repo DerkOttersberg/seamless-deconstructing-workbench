@@ -8,6 +8,8 @@
 # Build outputs
 build/
 out/
+bin/
+*.log
 
 # Minecraft runtime data
 run/

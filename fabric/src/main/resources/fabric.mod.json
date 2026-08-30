@@ -1,0 +1,27 @@
+{
+  "schemaVersion": 1,
+  "id": "seamlessdeconstructor",
+  "version": "${version}",
+  "name": "Seamless Deconstructing Workbench",
+  "description": "A salvage workbench that deconstructs crafted items back into ingredients.",
+  "authors": ["Derk Ottersberg"],
+  "contact": {
+    "sources": "https://github.com/DerkOttersberg/seamless-deconstructing-workbench",
+    "issues": "https://github.com/DerkOttersberg/seamless-deconstructing-workbench/issues"
+  },
+  "license": "MIT",
+  "icon": "assets/seamlessdeconstructor/textures/item/reverse_deconstructor.png",
+  "environment": "*",
+  "entrypoints": {
+    "main": ["io.github.derkottersberg.seamlessdeconstructor.fabric.SeamlessDeconstructorFabric"],
+    "client": ["io.github.derkottersberg.seamlessdeconstructor.fabric.SeamlessDeconstructorFabricClient"]
+  },
+  "accessWidener": "seamlessdeconstructor.accesswidener",
+  "depends": {
+    "fabricloader": ">=0.19.3",
+    "fabric-api": "*",
+    "minecraft": "~26.2",
+    "java": ">=25",
+    "seamlessapi": ">=2.0.0 <3.0.0"
+  }
+}

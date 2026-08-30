@@ -1,0 +1,31 @@
+license="MIT"
+issueTrackerURL="https://github.com/DerkOttersberg/seamless-deconstructing-workbench/issues"
+
+[[mods]]
+modId="seamlessdeconstructor"
+version="${mod_version}"
+displayName="Seamless Deconstructing Workbench"
+displayURL="https://github.com/DerkOttersberg/seamless-deconstructing-workbench"
+authors="Derk Ottersberg"
+description='''A salvage workbench that deconstructs crafted items back into ingredients.'''
+
+[[dependencies.seamlessdeconstructor]]
+modId="neoforge"
+type="required"
+versionRange="${neo_version_range}"
+ordering="NONE"
+side="BOTH"
+
+[[dependencies.seamlessdeconstructor]]
+modId="minecraft"
+type="required"
+versionRange="${minecraft_version_range}"
+ordering="NONE"
+side="BOTH"
+
+[[dependencies.seamlessdeconstructor]]
+modId="seamlessapi"
+type="required"
+versionRange="[2.0.0,3.0.0)"
+ordering="AFTER"
+side="BOTH"
