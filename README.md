@@ -29,8 +29,14 @@ file and a `.bak` copy are retained.
 Use Java 25 and run:
 
 ```text
-gradlew.bat clean check build --no-configuration-cache
+gradlew.bat clean check build
 ```
 
 The build uses the sibling `Seamless-API` checkout as a Gradle composite and
 produces one jar per loader under each loader module's `build/libs` directory.
+`check` starts an isolated Fabric GameTest server that verifies the preserved
+registry IDs, live recipe-manager resolution, block-entity ticking, input
+consumption, and four-ingredient crafting-table salvage.
+
+See [PORTING.md](PORTING.md) before changing Minecraft or loader versions and
+[MIGRATION.md](MIGRATION.md) before upgrading copied worlds or configurations.

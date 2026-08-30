@@ -1,0 +1,16 @@
+{
+  "schemaVersion": 1,
+  "id": "seamless-deconstructing-workbench-gametest",
+  "version": "1.0.0",
+  "name": "Seamless Deconstructing Workbench GameTests",
+  "environment": "server",
+  "entrypoints": {
+    "fabric-gametest": [
+      "io.github.derkottersberg.seamlessdeconstructor.fabric.gametest.SeamlessDeconstructorGameTests"
+    ]
+  },
+  "depends": {
+    "seamlessdeconstructor": "*",
+    "fabric-gametest-api-v1": "*"
+  }
+}
