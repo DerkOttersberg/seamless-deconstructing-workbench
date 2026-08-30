@@ -9,8 +9,8 @@ sourceSets.main {
 dependencies {
     minecraft libs.minecraft
     neoForge libs.neoforge
-    def seamlessApiNeoForge = files(rootProject.file("../Seamless-API/neoforge/build/libs/seamless-api-${libs.versions.seamless.api.get()}-neoforge.jar"))
-    seamlessApiNeoForge.builtBy gradle.includedBuild('Seamless-API').task(':neoforge:jar')
+    def seamlessApiNeoForge = files(rootProject.file("../seamless-api/neoforge/build/libs/seamless-api-${libs.versions.seamless.api.get()}-neoforge.jar"))
+    seamlessApiNeoForge.builtBy gradle.includedBuild('seamless-api').task(':neoforge:jar')
     implementation seamlessApiNeoForge
 }
 loom { mods { seamlessdeconstructor { sourceSet sourceSets.main } } }

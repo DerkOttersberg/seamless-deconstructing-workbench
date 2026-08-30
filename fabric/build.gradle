@@ -4,8 +4,8 @@ dependencies {
     minecraft libs.minecraft
     implementation libs.fabric.loader
     implementation libs.fabric.api
-    def seamlessApiFabric = files(rootProject.file("../Seamless-API/fabric/build/libs/seamless-api-${libs.versions.seamless.api.get()}-fabric.jar"))
-    seamlessApiFabric.builtBy gradle.includedBuild('Seamless-API').task(':fabric:jar')
+    def seamlessApiFabric = files(rootProject.file("../seamless-api/fabric/build/libs/seamless-api-${libs.versions.seamless.api.get()}-fabric.jar"))
+    seamlessApiFabric.builtBy gradle.includedBuild('seamless-api').task(':fabric:jar')
     implementation seamlessApiFabric
     implementation project(':common')
 }

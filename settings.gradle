@@ -23,4 +23,4 @@ gradle.beforeProject { project ->
 
 rootProject.name = 'seamless-deconstructing-workbench'
 include 'common', 'fabric', 'forge', 'neoforge'
-includeBuild('../Seamless-API')
+includeBuild('../seamless-api')

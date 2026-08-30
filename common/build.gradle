@@ -2,8 +2,8 @@ plugins { id 'dev.architectury.loom-no-remap' }
 base { archivesName = rootProject.archives_base_name }
 dependencies {
     minecraft libs.minecraft
-    def seamlessApiCommon = files(rootProject.file("../Seamless-API/common/build/libs/seamless-api-${libs.versions.seamless.api.get()}-common.jar"))
-    seamlessApiCommon.builtBy gradle.includedBuild('Seamless-API').task(':common:jar')
+    def seamlessApiCommon = files(rootProject.file("../seamless-api/common/build/libs/seamless-api-${libs.versions.seamless.api.get()}-common.jar"))
+    seamlessApiCommon.builtBy gradle.includedBuild('seamless-api').task(':common:jar')
     compileOnly seamlessApiCommon
     testImplementation seamlessApiCommon
     testImplementation platform(libs.junit.bom)

@@ -32,7 +32,7 @@ Use Java 25 and run:
 gradlew.bat clean check build
 ```
 
-The build uses the sibling `Seamless-API` checkout as a Gradle composite and
+The build uses the sibling `seamless-api` checkout as a Gradle composite and
 produces one jar per loader under each loader module's `build/libs` directory.
 `check` starts an isolated Fabric GameTest server that verifies the preserved
 registry IDs, live recipe-manager resolution, block-entity ticking, input

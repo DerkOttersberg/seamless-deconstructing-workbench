@@ -20,8 +20,8 @@ configurations.forgeRuntimeLibrary {
 dependencies {
     minecraft libs.minecraft
     forge libs.forge
-    def seamlessApiForge = files(rootProject.file("../Seamless-API/forge/build/libs/seamless-api-${libs.versions.seamless.api.get()}-forge.jar"))
-    seamlessApiForge.builtBy gradle.includedBuild('Seamless-API').task(':forge:jar')
+    def seamlessApiForge = files(rootProject.file("../seamless-api/forge/build/libs/seamless-api-${libs.versions.seamless.api.get()}-forge.jar"))
+    seamlessApiForge.builtBy gradle.includedBuild('seamless-api').task(':forge:jar')
     implementation seamlessApiForge
 }
 loom { mods { seamlessdeconstructor { sourceSet sourceSets.main } } }
