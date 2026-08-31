@@ -31,4 +31,4 @@ Seamless API remains an external 2.x dependency and must not be shaded.
    output, enchanted-item handling, automation faces, and menu closure.
 6. Upgrade only copied historical worlds/configs and confirm the registered
    workbench survives with its inventory and block entity intact.
-7. Run the matching five-mod combined profiles and retain logs/screenshots.
+7. Run the matching four-mod combined profiles and retain logs/screenshots.
