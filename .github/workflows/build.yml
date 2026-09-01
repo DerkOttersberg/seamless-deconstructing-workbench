@@ -21,7 +21,19 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        loader: [fabric, forge, neoforge]
+        include:
+          - lane: fabric-api-0.158
+            loader: fabric
+            gradle_args: -PfabricApiVersion=0.158.0+26.2
+          - lane: fabric-api-0.159
+            loader: fabric
+            gradle_args: -PfabricApiVersion=0.159.0+26.2
+          - lane: forge
+            loader: forge
+            gradle_args: ''
+          - lane: neoforge
+            loader: neoforge
+            gradle_args: ''
     runs-on: ubuntu-24.04
     defaults:
       run:
@@ -40,7 +52,18 @@ jobs:
           distribution: temurin
           java-version: '25'
       - uses: gradle/actions/setup-gradle@v4
-      - run: ./gradlew :common:check :${{ matrix.loader }}:check :${{ matrix.loader }}:build
+      - run: ./gradlew :common:check :${{ matrix.loader }}:check :${{ matrix.loader }}:build ${{ matrix.gradle_args }}
+      - name: Upload ${{ matrix.lane }} reports and logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: seamless-deconstructing-workbench-${{ matrix.lane }}-reports
+          if-no-files-found: ignore
+          path: |
+            suite/seamless-deconstructing-workbench/**/build/reports/**
+            suite/seamless-deconstructing-workbench/**/build/test-results/**
+            suite/seamless-deconstructing-workbench/**/build/run/**/logs/**
+            suite/seamless-deconstructing-workbench/**/build/gametest/logs/**
 
   verification:
     runs-on: ubuntu-24.04
@@ -62,3 +85,14 @@ jobs:
           java-version: '25'
       - uses: gradle/actions/setup-gradle@v4
       - run: ./gradlew clean check build
+      - name: Upload verification reports and logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: seamless-deconstructing-workbench-verification-reports
+          if-no-files-found: ignore
+          path: |
+            suite/seamless-deconstructing-workbench/**/build/reports/**
+            suite/seamless-deconstructing-workbench/**/build/test-results/**
+            suite/seamless-deconstructing-workbench/**/build/run/**/logs/**
+            suite/seamless-deconstructing-workbench/**/build/gametest/logs/**

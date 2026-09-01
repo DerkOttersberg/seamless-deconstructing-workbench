@@ -3,7 +3,9 @@ base { archivesName = rootProject.archives_base_name }
 dependencies {
     minecraft libs.minecraft
     implementation libs.fabric.loader
-    implementation libs.fabric.api
+    def selectedFabricApi = providers.gradleProperty('fabricApiVersion')
+            .getOrElse(libs.versions.fabric.api.asProvider().get())
+    implementation "net.fabricmc.fabric-api:fabric-api:${selectedFabricApi}"
     def seamlessApiFabric = files(rootProject.file("../seamless-api/fabric/build/libs/seamless-api-${libs.versions.seamless.api.get()}-fabric.jar"))
     seamlessApiFabric.builtBy gradle.includedBuild('seamless-api').task(':fabric:jar')
     implementation seamlessApiFabric
@@ -46,12 +48,12 @@ tasks.named('runGameTest') {
 tasks.named('check') { dependsOn tasks.named('runGameTest') }
 
 def metadataVersion = project.version.toString()
-def fabricApiVersion = libs.versions.fabric.api.get()
+def fabricApiRange = libs.versions.fabric.api.range.get()
 processResources {
     inputs.property 'version', metadataVersion
-    inputs.property 'fabric_api_version', fabricApiVersion
+    inputs.property 'fabric_api_range', fabricApiRange
     filesMatching('fabric.mod.json') {
-        expand version: metadataVersion, fabric_api_version: fabricApiVersion
+        expand version: metadataVersion, fabric_api_range: fabricApiRange
     }
 }
 tasks.named('jar', Jar) {

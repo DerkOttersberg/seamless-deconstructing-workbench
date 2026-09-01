@@ -16,6 +16,9 @@ versionRange="${neo_version_range}"
 ordering="NONE"
 side="BOTH"
 
+[features.seamlessdeconstructor]
+javaVersion="[25,)"
+
 [[dependencies.seamlessdeconstructor]]
 modId="minecraft"
 type="required"

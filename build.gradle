@@ -77,6 +77,8 @@ tasks.register('verifyLoaderJars') {
         ]
         specifications.each { loader, specification ->
             def archive = loaderJarFiles[loader].get().asFile
+            def expectedName = "${rootProject.archives_base_name}-${project.version}-${loader}.jar"
+            if (archive.name != expectedName) throw new GradleException("Expected ${expectedName}, found ${archive.name}")
             new java.util.zip.ZipFile(archive).withCloseable { zip ->
                 if (zip.getEntry(specification.expected) == null) throw new GradleException("${archive.name} is missing ${specification.expected}")
                 specification.forbidden.each { entry ->
@@ -84,25 +86,34 @@ tasks.register('verifyLoaderJars') {
                 }
                 if (zip.getEntry('com/seamlessdeconstructor/SeamlessDeconstructorMod.class') == null) throw new GradleException("${archive.name} is missing common code")
                 if (zip.getEntry('com/derko/seamlessapi/DeconstructionAPI.class') != null) throw new GradleException("${archive.name} improperly shades Seamless API")
+                if (zip.entries().find { it.name.contains('/gametest/') }) throw new GradleException("${archive.name} ships development GameTest classes")
+                if (loader == 'fabric') {
+                    def metadata = new groovy.json.JsonSlurper().parse(zip.getInputStream(zip.getEntry('fabric.mod.json')))
+                    if (metadata.id != 'seamlessdeconstructor' || metadata.schemaVersion != 1) throw new GradleException('Unexpected Fabric mod identity/schema')
+                    if (metadata.version != project.version.toString()) throw new GradleException("Unexpected Fabric version ${metadata.version}")
+                    if (metadata.license != 'MIT') throw new GradleException("Unexpected Fabric license ${metadata.license}")
+                    if (metadata.depends.fabricloader != '>=0.19.3') throw new GradleException("Unexpected Fabric Loader range ${metadata.depends.fabricloader}")
+                    if (metadata.depends['fabric-api'] != libs.versions.fabric.api.range.get()) throw new GradleException("Unexpected Fabric API range ${metadata.depends['fabric-api']}")
+                    if (metadata.depends.values().any { it == '*' }) throw new GradleException('Fabric dependency wildcards are forbidden')
+                    if (metadata.depends.minecraft != '~26.2' || metadata.depends.java != '>=25') throw new GradleException('Unexpected Minecraft/Java range')
+                    if (metadata.depends.seamlessapi != '>=2.0.0 <3.0.0') throw new GradleException("Unexpected Seamless API range ${metadata.depends.seamlessapi}")
+                } else {
+                    def metadata = zip.getInputStream(zip.getEntry(specification.expected)).getText('UTF-8')
+                    if (metadata.contains('${')) throw new GradleException("${archive.name} contains unprocessed metadata placeholders")
+                    def requiredValues = loader == 'forge'
+                            ? ['modLoader="javafml"', 'loaderVersion="[65,)"', 'license="MIT"',
+                               "version=\"${project.version}\"", 'modId="forge"', 'versionRange="[65.1.3,66)"',
+                               'modId="minecraft"', 'versionRange="[26.2,26.3)"',
+                               'modId="seamlessapi"', 'versionRange="[2.0.0,3.0.0)"', 'javaVersion="[25,)"']
+                            : ['license="MIT"', "version=\"${project.version}\"",
+                               'modId="neoforge"', 'versionRange="[26.2.0.75,26.3)"',
+                               'modId="minecraft"', 'versionRange="[26.2,26.3)"',
+                               'modId="seamlessapi"', 'versionRange="[2.0.0,3.0.0)"', 'javaVersion="[25,)"']
+                    requiredValues.each { value ->
+                        if (!metadata.contains(value)) throw new GradleException("${archive.name} is missing processed metadata: ${value}")
+                    }
+                }
             }
-        }
-    }
-}
-
-tasks.register('verifyFabricMetadata') {
-    group = 'verification'
-    dependsOn ':fabric:processResources'
-    def processedMetadata = project(':fabric').layout.buildDirectory.file('resources/main/fabric.mod.json')
-    inputs.file(processedMetadata)
-    doLast {
-        def metadata = new groovy.json.JsonSlurper().parse(processedMetadata.get().asFile)
-        def declaredRange = metadata.depends['fabric-api']
-        def expectedRange = ">=${libs.versions.fabric.api.get()}"
-        if (declaredRange == '*' || declaredRange != expectedRange) {
-            throw new GradleException("Fabric API dependency must be ${expectedRange}, found ${declaredRange}")
-        }
-        if (metadata.license != 'MIT') {
-            throw new GradleException("Fabric license metadata must remain MIT")
         }
     }
 }
@@ -110,7 +121,6 @@ tasks.register('verifyFabricMetadata') {
 tasks.named('assemble') { dependsOn subprojects.collect { it.tasks.named('assemble') } }
 tasks.named('check') {
     dependsOn tasks.named('verifyCommonIsolation')
-    dependsOn tasks.named('verifyFabricMetadata')
     dependsOn tasks.named('verifyLoaderJars')
     dependsOn subprojects.collect { it.tasks.named('check') }
 }
