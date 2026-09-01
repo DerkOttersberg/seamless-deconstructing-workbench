@@ -30,6 +30,11 @@ public final class SeamlessDeconstructorGameTests {
         WorkbenchGameTestScenario.transfersEnchantmentsAndConsumesBookAtomically(helper);
     }
 
+    @GameTest(maxTicks = 650)
+    public void damagedInputUsesDurabilityAdjustedSalvage(GameTestHelper helper) {
+        WorkbenchGameTestScenario.damagedInputUsesDurabilityAdjustedSalvage(helper);
+    }
+
     @GameTest(maxTicks = 200)
     public void rejectsModifiedBooksAsEnchantmentCarriers(GameTestHelper helper) {
         WorkbenchGameTestScenario.rejectsModifiedBooksAsEnchantmentCarriers(helper);
@@ -79,6 +84,13 @@ public final class SeamlessDeconstructorGameTests {
         }
         try (Transaction transaction = Transaction.openOuter()) {
             helper.assertValueEqual(
+                    top.insert(ItemVariant.of(Items.CRAFTING_TABLE), 1, transaction),
+                    1L,
+                    "Fabric Transfer API did not accept a non-book input");
+            transaction.commit();
+        }
+        try (Transaction transaction = Transaction.openOuter()) {
+            helper.assertValueEqual(
                     top.insert(ItemVariant.of(Items.BOOK), 5, transaction),
                     1L,
                     "Fabric Transfer API did not enforce the one-book capacity");
@@ -88,6 +100,38 @@ public final class SeamlessDeconstructorGameTests {
                 blockEntity.getItem(ReverseDeconstructorBlockEntity.BOOK_SLOT).getCount(),
                 1,
                 "Fabric Transfer API inserted the wrong number of books");
+
+        blockEntity.setItem(
+                ReverseDeconstructorBlockEntity.OUTPUT_START,
+                new ItemStack(Items.OAK_PLANKS, 2));
+        try (Transaction transaction = Transaction.openOuter()) {
+            helper.assertValueEqual(
+                    bottom.insert(ItemVariant.of(Items.STONE), 1, transaction),
+                    0L,
+                    "Fabric output face accepted item insertion");
+            helper.assertValueEqual(
+                    top.extract(ItemVariant.of(Items.CRAFTING_TABLE), 1, transaction),
+                    0L,
+                    "Fabric input face allowed input extraction");
+            helper.assertValueEqual(
+                    unsided.extract(ItemVariant.of(Items.CRAFTING_TABLE), 1, transaction),
+                    0L,
+                    "Fabric unsided access allowed input extraction");
+            helper.assertValueEqual(
+                    unsided.extract(ItemVariant.of(Items.BOOK), 1, transaction),
+                    0L,
+                    "Fabric unsided access allowed book extraction");
+            helper.assertValueEqual(
+                    unsided.extract(ItemVariant.of(Items.OAK_PLANKS), 1, transaction),
+                    1L,
+                    "Fabric unsided access could not extract an output");
+        }
+        try (Transaction transaction = Transaction.openOuter()) {
+            helper.assertValueEqual(
+                    bottom.extract(ItemVariant.of(Items.OAK_PLANKS), 1, transaction),
+                    1L,
+                    "Fabric output face could not extract an output");
+        }
         helper.succeed();
     }
 }

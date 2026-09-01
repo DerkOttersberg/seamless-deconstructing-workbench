@@ -6,7 +6,6 @@ import com.seamlessdeconstructor.SeamlessDeconstructorMod;
 import java.io.IOException;
 import java.io.Reader;
 import java.io.Writer;
-import java.nio.file.AtomicMoveNotSupportedException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
@@ -90,7 +89,10 @@ public final class ModConfig {
                         path,
                         StandardCopyOption.ATOMIC_MOVE,
                         StandardCopyOption.REPLACE_EXISTING);
-            } catch (AtomicMoveNotSupportedException exception) {
+            } catch (IOException atomicMoveFailure) {
+                // Windows can report AccessDeniedException when ATOMIC_MOVE replaces an existing
+                // file even though an ordinary replace is permitted. Retry without the atomic
+                // option; if this is a real permission problem, the outer catch still logs it.
                 Files.move(temporary, path, StandardCopyOption.REPLACE_EXISTING);
             }
         } catch (IOException exception) {

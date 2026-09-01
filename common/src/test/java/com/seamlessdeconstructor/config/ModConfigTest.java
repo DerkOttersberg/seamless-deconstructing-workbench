@@ -68,4 +68,21 @@ class ModConfigTest {
         assertEquals(0.07D, ModConfig.maxLossFraction());
         assertFalse(Files.exists(directory.resolve(ModConfig.LEGACY_FILE_NAME + ".bak")));
     }
+
+    @Test
+    void repeatedlyReplacesAnExistingCanonicalConfigWithoutLeavingTemporaryFiles() throws Exception {
+        Path canonical = directory.resolve(ModConfig.CANONICAL_FILE_NAME);
+        Files.writeString(canonical, """
+                {"processTicks": 5, "minLossPercent": 95, "maxLossPercent": -2}
+                """);
+
+        ModConfig.load(directory);
+        ModConfig.save();
+
+        String saved = Files.readString(canonical);
+        assertTrue(saved.contains("\"processTicks\": 20"));
+        assertTrue(saved.contains("\"minLossPercent\": 0"));
+        assertTrue(saved.contains("\"maxLossPercent\": 90"));
+        assertFalse(Files.exists(canonical.resolveSibling(canonical.getFileName() + ".tmp")));
+    }
 }

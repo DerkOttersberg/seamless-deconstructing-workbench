@@ -8,7 +8,6 @@ import java.nio.file.Path;
 import java.util.function.Supplier;
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.creativetab.v1.CreativeModeTabEvents;
-import net.fabricmc.fabric.api.transfer.v1.item.ContainerStorage;
 import net.fabricmc.fabric.api.transfer.v1.item.ItemStorage;
 import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.core.Registry;
@@ -28,7 +27,7 @@ public final class SeamlessDeconstructorFabric implements ModInitializer {
     public void onInitialize() {
         SeamlessDeconstructorMod.initialize(new FabricPlatformServices());
         ItemStorage.SIDED.registerForBlockEntity(
-                (blockEntity, side) -> ContainerStorage.of(blockEntity, side),
+                WorkbenchStorageAdapter::new,
                 ModBlockEntities.REVERSE_DECONSTRUCTOR_BLOCK_ENTITY.get());
         CreativeModeTabEvents.modifyOutputEvent(CreativeModeTabs.FUNCTIONAL_BLOCKS)
                 .register(entries -> entries.accept(ModBlocks.REVERSE_DECONSTRUCTOR_ITEM.get()));

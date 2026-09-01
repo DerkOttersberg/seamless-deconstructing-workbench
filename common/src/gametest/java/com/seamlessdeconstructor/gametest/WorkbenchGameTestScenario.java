@@ -4,9 +4,11 @@ import com.seamlessdeconstructor.SeamlessDeconstructorMod;
 import com.seamlessdeconstructor.block.entity.ReverseDeconstructorBlockEntity;
 import com.seamlessdeconstructor.config.ModConfig;
 import com.seamlessdeconstructor.logic.DeconstructionResolver;
+import com.seamlessdeconstructor.logic.PendingDeconstructionOperation;
 import com.seamlessdeconstructor.registry.ModBlockEntities;
 import com.seamlessdeconstructor.registry.ModBlocks;
 import com.seamlessdeconstructor.screen.ReverseDeconstructorScreenHandler;
+import java.util.List;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.component.DataComponents;
@@ -14,6 +16,7 @@ import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.network.chat.Component;
+import net.minecraft.util.ProblemReporter;
 import net.minecraft.tags.ItemTags;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.item.Item;
@@ -22,6 +25,7 @@ import net.minecraft.world.item.Items;
 import net.minecraft.world.item.enchantment.Enchantments;
 import net.minecraft.world.item.enchantment.ItemEnchantments;
 import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.storage.TagValueInput;
 
 public final class WorkbenchGameTestScenario {
     private static final BlockPos WORKBENCH_POS = new BlockPos(1, 1, 1);
@@ -124,6 +128,39 @@ public final class WorkbenchGameTestScenario {
         });
     }
 
+    public static void damagedInputUsesDurabilityAdjustedSalvage(GameTestHelper helper) {
+        ReverseDeconstructorBlockEntity blockEntity = placeWorkbench(helper);
+        ItemStack input = new ItemStack(Items.IRON_PICKAXE);
+        input.setDamageValue(input.getMaxDamage() - 1);
+        helper.assertTrue(
+                DeconstructionResolver.resolve(helper.getLevel(), input.getItem()).isPresent(),
+                "The live recipe manager did not resolve the damaged pickaxe recipe");
+        blockEntity.setItem(ReverseDeconstructorBlockEntity.INPUT_SLOT, input);
+
+        helper.runAfterDelay(ModConfig.processTicks() + 10L, () -> {
+            helper.assertTrue(
+                    blockEntity.getItem(ReverseDeconstructorBlockEntity.INPUT_SLOT).isEmpty(),
+                    "The damaged input was not consumed");
+            int total = 0;
+            for (int slot = ReverseDeconstructorBlockEntity.OUTPUT_START;
+                    slot <= ReverseDeconstructorBlockEntity.OUTPUT_END;
+                    slot++) {
+                ItemStack output = blockEntity.getItem(slot);
+                if (!output.isEmpty()) {
+                    helper.assertTrue(
+                            output.is(Items.IRON_INGOT) || output.is(Items.STICK),
+                            "Damaged pickaxe salvage produced an unrelated item");
+                    total += output.getCount();
+                }
+            }
+            helper.assertValueEqual(
+                    total,
+                    1,
+                    "Near-broken input did not use the minimum durability-adjusted salvage result");
+            helper.succeed();
+        });
+    }
+
     public static void rejectsModifiedBooksAsEnchantmentCarriers(GameTestHelper helper) {
         ReverseDeconstructorBlockEntity blockEntity = placeWorkbench(helper);
         ItemStack input = new ItemStack(Items.IRON_PICKAXE);
@@ -164,7 +201,20 @@ public final class WorkbenchGameTestScenario {
 
     public static void blockedOperationSurvivesSaveReloadAndCommitsWithoutOverflow(GameTestHelper helper) {
         ReverseDeconstructorBlockEntity blockEntity = placeWorkbench(helper);
-        blockEntity.setItem(ReverseDeconstructorBlockEntity.INPUT_SLOT, new ItemStack(Items.CRAFTING_TABLE));
+        ItemStack randomizedInput = new ItemStack(Items.RAIL);
+        var efficiency = helper.getLevel()
+                .registryAccess()
+                .lookupOrThrow(Registries.ENCHANTMENT)
+                .getOrThrow(Enchantments.EFFICIENCY);
+        randomizedInput.enchant(efficiency, 1);
+        var randomizedPlan = DeconstructionResolver.resolve(helper.getLevel(), randomizedInput.getItem());
+        helper.assertTrue(randomizedPlan.isPresent(), "The live recipe manager did not resolve the rail recipe");
+        helper.assertTrue(
+                randomizedPlan.get().totalUnitsPerOutput() > 0.0D
+                        && randomizedPlan.get().totalUnitsPerOutput() < 1.0D,
+                "The pending-operation fixture no longer exercises a fractional randomized salvage roll");
+        blockEntity.setItem(ReverseDeconstructorBlockEntity.INPUT_SLOT, randomizedInput);
+        blockEntity.setItem(ReverseDeconstructorBlockEntity.BOOK_SLOT, new ItemStack(Items.BOOK));
         for (int slot = ReverseDeconstructorBlockEntity.OUTPUT_START;
                 slot <= ReverseDeconstructorBlockEntity.OUTPUT_END;
                 slot++) {
@@ -217,6 +267,12 @@ public final class WorkbenchGameTestScenario {
 
             var saved = blockEntity.saveWithFullMetadata(helper.getLevel().registryAccess());
             helper.assertTrue(saved.contains("PendingOperation"), "The exact pending operation was not persisted");
+            PendingDeconstructionOperation expectedPending = PendingDeconstructionOperation.load(
+                            TagValueInput.create(
+                                    ProblemReporter.DISCARDING,
+                                    helper.getLevel().registryAccess(),
+                                    saved))
+                    .orElseThrow(() -> new AssertionError("The randomized pending operation could not be decoded"));
 
             BlockPos absolutePos = helper.absolutePos(WORKBENCH_POS);
             BlockEntity reloaded = BlockEntity.loadStatic(
@@ -231,16 +287,49 @@ public final class WorkbenchGameTestScenario {
             helper.getLevel().removeBlockEntity(absolutePos);
             helper.getLevel().setBlockEntity(reloaded);
             ReverseDeconstructorBlockEntity reloadedWorkbench = (ReverseDeconstructorBlockEntity) reloaded;
-            reloadedWorkbench.setItem(ReverseDeconstructorBlockEntity.OUTPUT_START, ItemStack.EMPTY);
 
-            helper.runAfterDelay(5L, () -> {
-                helper.assertTrue(
-                        reloadedWorkbench.getItem(ReverseDeconstructorBlockEntity.INPUT_SLOT).isEmpty(),
-                        "Reloaded pending operation did not commit after capacity became available");
-                ItemStack output = reloadedWorkbench.getItem(ReverseDeconstructorBlockEntity.OUTPUT_START);
-                helper.assertTrue(output.is(ItemTags.PLANKS), "Reloaded exact output was replaced with another item");
-                helper.assertValueEqual(output.getCount(), 4, "Reloaded exact output count changed");
-                helper.succeed();
+            helper.runAfterDelay(2L, () -> {
+                var stillBlocked = reloadedWorkbench.saveWithFullMetadata(helper.getLevel().registryAccess());
+                PendingDeconstructionOperation reloadedPending = PendingDeconstructionOperation.load(
+                                TagValueInput.create(
+                                        ProblemReporter.DISCARDING,
+                                        helper.getLevel().registryAccess(),
+                                        stillBlocked))
+                        .orElseThrow(() -> new AssertionError("Reload discarded the randomized pending operation"));
+                assertExactStackLists(
+                        helper,
+                        expectedPending.outputs(),
+                        reloadedPending.outputs(),
+                        "Reload rerolled or changed the exact pending output");
+                for (int slot = ReverseDeconstructorBlockEntity.OUTPUT_START;
+                        slot <= ReverseDeconstructorBlockEntity.OUTPUT_END;
+                        slot++) {
+                    reloadedWorkbench.setItem(slot, ItemStack.EMPTY);
+                }
+
+                helper.runAfterDelay(5L, () -> {
+                    helper.assertTrue(
+                            reloadedWorkbench.getItem(ReverseDeconstructorBlockEntity.INPUT_SLOT).isEmpty(),
+                            "Reloaded pending operation did not commit after capacity became available");
+                    helper.assertTrue(
+                            reloadedWorkbench.getItem(ReverseDeconstructorBlockEntity.BOOK_SLOT).isEmpty(),
+                            "Reloaded pending operation did not consume its exact plain book");
+                    List<ItemStack> committed = new java.util.ArrayList<>();
+                    for (int slot = ReverseDeconstructorBlockEntity.OUTPUT_START;
+                            slot <= ReverseDeconstructorBlockEntity.OUTPUT_END;
+                            slot++) {
+                        ItemStack output = reloadedWorkbench.getItem(slot);
+                        if (!output.isEmpty()) {
+                            committed.add(output.copy());
+                        }
+                    }
+                    assertExactStackLists(
+                            helper,
+                            expectedPending.outputs(),
+                            committed,
+                            "Committed output differs from the randomized result persisted before reload");
+                    helper.succeed();
+                });
             });
         });
     }
@@ -356,5 +445,21 @@ public final class WorkbenchGameTestScenario {
             }
         }
         return ItemStack.EMPTY;
+    }
+
+    private static void assertExactStackLists(
+            GameTestHelper helper,
+            List<ItemStack> expected,
+            List<ItemStack> actual,
+            String message) {
+        helper.assertValueEqual(actual.size(), expected.size(), message + " (stack count)");
+        for (int index = 0; index < expected.size(); index++) {
+            ItemStack expectedStack = expected.get(index);
+            ItemStack actualStack = actual.get(index);
+            helper.assertTrue(
+                    ItemStack.isSameItemSameComponents(expectedStack, actualStack)
+                            && expectedStack.getCount() == actualStack.getCount(),
+                    message + " (stack " + index + ")");
+        }
     }
 }

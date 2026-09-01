@@ -30,6 +30,9 @@ public final class SeamlessDeconstructorForgeGameTests {
                 "enchantment_book_atomicity",
                 () -> WorkbenchGameTestScenario::transfersEnchantmentsAndConsumesBookAtomically);
         TEST_FUNCTIONS.register(
+                "damaged_input",
+                () -> WorkbenchGameTestScenario::damagedInputUsesDurabilityAdjustedSalvage);
+        TEST_FUNCTIONS.register(
                 "modified_book_rejected",
                 () -> WorkbenchGameTestScenario::rejectsModifiedBooksAsEnchantmentCarriers);
         TEST_FUNCTIONS.register(
@@ -74,12 +77,30 @@ public final class SeamlessDeconstructorForgeGameTests {
         modifiedBook.set(DataComponents.CUSTOM_NAME, Component.literal("Modified"));
         ItemStack rejected = top.insertItem(1, modifiedBook, false);
         helper.assertValueEqual(rejected.getCount(), 1, "Forge item handler accepted a modified book");
+        helper.assertTrue(
+                top.insertItem(0, new ItemStack(Items.CRAFTING_TABLE), false).isEmpty(),
+                "Forge item handler did not accept a non-book input");
         ItemStack remainder = top.insertItem(1, new ItemStack(Items.BOOK, 5), false);
         helper.assertValueEqual(remainder.getCount(), 4, "Forge item handler did not enforce one-book capacity");
         helper.assertValueEqual(
                 blockEntity.getItem(ReverseDeconstructorBlockEntity.BOOK_SLOT).getCount(),
                 1,
                 "Forge item handler inserted the wrong number of books");
+        blockEntity.setItem(
+                ReverseDeconstructorBlockEntity.OUTPUT_START,
+                new ItemStack(Items.OAK_PLANKS, 2));
+        helper.assertValueEqual(
+                bottom.insertItem(0, new ItemStack(Items.STONE), false).getCount(),
+                1,
+                "Forge output face accepted item insertion");
+        helper.assertTrue(top.extractItem(0, 1, false).isEmpty(), "Forge input face allowed input extraction");
+        helper.assertTrue(unsided.extractItem(0, 1, false).isEmpty(), "Forge unsided access allowed input extraction");
+        helper.assertTrue(unsided.extractItem(1, 1, false).isEmpty(), "Forge unsided access allowed book extraction");
+        helper.assertTrue(
+                unsided.extractItem(ReverseDeconstructorBlockEntity.OUTPUT_START, 1, true).is(Items.OAK_PLANKS),
+                "Forge unsided access could not extract an output");
+        helper.assertTrue(bottom.extractItem(0, 1, true).is(Items.OAK_PLANKS),
+                "Forge output face could not extract an output");
         helper.succeed();
     }
 }

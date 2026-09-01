@@ -34,6 +34,8 @@ public final class SeamlessDeconstructorNeoForgeGameTests {
             registerFunction("processes_crafting_table", WorkbenchGameTestScenario::processesCraftingTableIntoIngredients);
     private static final DeferredHolder<Consumer<GameTestHelper>, Consumer<GameTestHelper>> ENCHANTMENTS =
             registerFunction("enchantment_book_atomicity", WorkbenchGameTestScenario::transfersEnchantmentsAndConsumesBookAtomically);
+    private static final DeferredHolder<Consumer<GameTestHelper>, Consumer<GameTestHelper>> DAMAGED_INPUT =
+            registerFunction("damaged_input", WorkbenchGameTestScenario::damagedInputUsesDurabilityAdjustedSalvage);
     private static final DeferredHolder<Consumer<GameTestHelper>, Consumer<GameTestHelper>> MODIFIED_BOOK =
             registerFunction("modified_book_rejected", WorkbenchGameTestScenario::rejectsModifiedBooksAsEnchantmentCarriers);
     private static final DeferredHolder<Consumer<GameTestHelper>, Consumer<GameTestHelper>> SAVE_RELOAD =
@@ -65,6 +67,7 @@ public final class SeamlessDeconstructorNeoForgeGameTests {
                 new TestEnvironmentDefinition.AllOf());
         registerTest(event, environment, "processes_crafting_table", PROCESSING, 650);
         registerTest(event, environment, "enchantment_book_atomicity", ENCHANTMENTS, 650);
+        registerTest(event, environment, "damaged_input", DAMAGED_INPUT, 650);
         registerTest(event, environment, "modified_book_rejected", MODIFIED_BOOK, 200);
         registerTest(event, environment, "pending_save_reload", SAVE_RELOAD, 700);
         registerTest(event, environment, "sided_automation", AUTOMATION, 100);
@@ -129,6 +132,13 @@ public final class SeamlessDeconstructorNeoForgeGameTests {
         }
         try (Transaction transaction = Transaction.openRoot()) {
             helper.assertValueEqual(
+                    top.insert(0, ItemResource.of(Items.CRAFTING_TABLE), 1, transaction),
+                    1,
+                    "NeoForge transfer handler did not accept a non-book input");
+            transaction.commit();
+        }
+        try (Transaction transaction = Transaction.openRoot()) {
+            helper.assertValueEqual(
                     top.insert(1, ItemResource.of(Items.BOOK), 5, transaction),
                     1,
                     "NeoForge transfer handler did not enforce one-book capacity");
@@ -138,6 +148,38 @@ public final class SeamlessDeconstructorNeoForgeGameTests {
                 blockEntity.getItem(ReverseDeconstructorBlockEntity.BOOK_SLOT).getCount(),
                 1,
                 "NeoForge transfer handler inserted the wrong number of books");
+
+        blockEntity.setItem(
+                ReverseDeconstructorBlockEntity.OUTPUT_START,
+                new ItemStack(Items.OAK_PLANKS, 2));
+        try (Transaction transaction = Transaction.openRoot()) {
+            helper.assertValueEqual(
+                    bottom.insert(0, ItemResource.of(Items.STONE), 1, transaction),
+                    0,
+                    "NeoForge output face accepted item insertion");
+            helper.assertValueEqual(
+                    top.extract(0, ItemResource.of(Items.CRAFTING_TABLE), 1, transaction),
+                    0,
+                    "NeoForge input face allowed input extraction");
+            helper.assertValueEqual(
+                    unsided.extract(ReverseDeconstructorBlockEntity.INPUT_SLOT, ItemResource.of(Items.CRAFTING_TABLE), 1, transaction),
+                    0,
+                    "NeoForge unsided access allowed input extraction");
+            helper.assertValueEqual(
+                    unsided.extract(ReverseDeconstructorBlockEntity.BOOK_SLOT, ItemResource.of(Items.BOOK), 1, transaction),
+                    0,
+                    "NeoForge unsided access allowed book extraction");
+            helper.assertValueEqual(
+                    unsided.extract(ReverseDeconstructorBlockEntity.OUTPUT_START, ItemResource.of(Items.OAK_PLANKS), 1, transaction),
+                    1,
+                    "NeoForge unsided access could not extract an output");
+        }
+        try (Transaction transaction = Transaction.openRoot()) {
+            helper.assertValueEqual(
+                    bottom.extract(0, ItemResource.of(Items.OAK_PLANKS), 1, transaction),
+                    1,
+                    "NeoForge output face could not extract an output");
+        }
         helper.succeed();
     }
 }
