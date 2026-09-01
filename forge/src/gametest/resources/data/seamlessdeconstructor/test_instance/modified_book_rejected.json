@@ -1,0 +1,9 @@
+{
+  "type": "minecraft:function",
+  "environment": "minecraft:default",
+  "function": "seamlessdeconstructor:modified_book_rejected",
+  "max_ticks": 200,
+  "required": true,
+  "setup_ticks": 0,
+  "structure": "minecraft:empty"
+}

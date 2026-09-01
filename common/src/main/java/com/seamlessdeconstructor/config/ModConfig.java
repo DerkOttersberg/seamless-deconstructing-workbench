@@ -2,9 +2,11 @@ package com.seamlessdeconstructor.config;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import com.seamlessdeconstructor.SeamlessDeconstructorMod;
 import java.io.IOException;
 import java.io.Reader;
 import java.io.Writer;
+import java.nio.file.AtomicMoveNotSupportedException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
@@ -12,6 +14,7 @@ import java.nio.file.StandardCopyOption;
 public final class ModConfig {
     static final String CANONICAL_FILE_NAME = "seamless-deconstructing-workbench.json";
     static final String LEGACY_FILE_NAME = "seamlessdeconstructor.json";
+    static final String INVALID_BACKUP_SUFFIX = ".invalid.bak";
 
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
     private static ModConfigData data = new ModConfigData();
@@ -32,11 +35,41 @@ public final class ModConfig {
 
         try (Reader reader = Files.newBufferedReader(path)) {
             ModConfigData loaded = GSON.fromJson(reader, ModConfigData.class);
-            data = loaded != null ? loaded : new ModConfigData();
+            if (loaded == null) {
+                throw new IOException("Config contained no JSON object");
+            }
+            data = loaded;
             sanitize();
-        } catch (Exception ignored) {
-            data = new ModConfigData();
+            save();
+        } catch (Exception exception) {
+            recoverInvalidConfig(exception);
         }
+    }
+
+    private static void recoverInvalidConfig(Exception cause) {
+        Path backup = path.resolveSibling(path.getFileName() + INVALID_BACKUP_SUFFIX);
+        try {
+            Files.copy(path, backup, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.COPY_ATTRIBUTES);
+            SeamlessDeconstructorMod.LOGGER.warn(
+                    "Backed up invalid workbench config {} to {}",
+                    path,
+                    backup);
+        } catch (IOException backupException) {
+            cause.addSuppressed(backupException);
+            SeamlessDeconstructorMod.LOGGER.error(
+                    "Could not back up invalid workbench config {} to {}",
+                    path,
+                    backup,
+                    backupException);
+        }
+
+        SeamlessDeconstructorMod.LOGGER.warn(
+                "Workbench config {} was invalid; restoring sanitized defaults",
+                path,
+                cause);
+        data = new ModConfigData();
+        sanitize();
+        save();
     }
 
     public static synchronized void save() {
@@ -45,12 +78,30 @@ public final class ModConfig {
         }
 
         sanitize();
+        Path temporary = path.resolveSibling(path.getFileName() + ".tmp");
         try {
             Files.createDirectories(path.getParent());
-            try (Writer writer = Files.newBufferedWriter(path)) {
+            try (Writer writer = Files.newBufferedWriter(temporary)) {
                 GSON.toJson(data, writer);
             }
-        } catch (IOException ignored) {
+            try {
+                Files.move(
+                        temporary,
+                        path,
+                        StandardCopyOption.ATOMIC_MOVE,
+                        StandardCopyOption.REPLACE_EXISTING);
+            } catch (AtomicMoveNotSupportedException exception) {
+                Files.move(temporary, path, StandardCopyOption.REPLACE_EXISTING);
+            }
+        } catch (IOException exception) {
+            SeamlessDeconstructorMod.LOGGER.error("Could not save workbench config {}", path, exception);
+        } finally {
+            try {
+                Files.deleteIfExists(temporary);
+            } catch (IOException exception) {
+                SeamlessDeconstructorMod.LOGGER.warn(
+                        "Could not remove temporary workbench config {}", temporary, exception);
+            }
         }
     }
 
@@ -79,7 +130,17 @@ public final class ModConfig {
                 Files.copy(legacy, backup, StandardCopyOption.COPY_ATTRIBUTES);
             }
             Files.copy(legacy, path, StandardCopyOption.COPY_ATTRIBUTES);
-        } catch (IOException ignored) {
+            SeamlessDeconstructorMod.LOGGER.info(
+                    "Migrated legacy workbench config {} to {}; backup retained at {}",
+                    legacy,
+                    path,
+                    backup);
+        } catch (IOException exception) {
+            SeamlessDeconstructorMod.LOGGER.error(
+                    "Could not migrate legacy workbench config {} to {}",
+                    legacy,
+                    path,
+                    exception);
         }
     }
 

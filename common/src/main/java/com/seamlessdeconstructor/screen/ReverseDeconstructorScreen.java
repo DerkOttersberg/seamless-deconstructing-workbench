@@ -30,10 +30,10 @@ public class ReverseDeconstructorScreen extends AbstractContainerScreen<ReverseD
         int border = ARGB.color(255, 110, 96, 74);
         context.outline(x, y, this.imageWidth, this.imageHeight, border);
 
-        drawSlot(context, x + 29, y + 24, 18, 18);
-        drawSlot(context, x + 29, y + 42, 18, 18);
+        drawSlot(context, x + 29, y + 23, 18, 18);
+        drawSlot(context, x + 29, y + 41, 18, 18);
         if (!this.menu.getSlot(1).hasItem()) {
-            drawBookHint(context, x + 29, y + 42);
+            drawBookHint(context, x + 29, y + 41);
         }
 
         for (int row = 0; row < 2; row++) {
@@ -56,12 +56,28 @@ public class ReverseDeconstructorScreen extends AbstractContainerScreen<ReverseD
         int arrowTop = y + 37;
         context.fill(arrowLeft, arrowTop, arrowLeft + 24, arrowTop + 10, ARGB.color(255, 56, 50, 40));
 
-        if (menu.isProcessing()) {
+        if (menu.isProcessing() || menu.isBlocked()) {
             int progress = menu.getScaledProgress();
-            context.fill(arrowLeft, arrowTop, arrowLeft + progress, arrowTop + 10, ARGB.color(255, 199, 173, 111));
+            int progressColor = menu.isBlocked()
+                    ? ARGB.color(255, 190, 91, 70)
+                    : ARGB.color(255, 199, 173, 111);
+            context.fill(arrowLeft, arrowTop, arrowLeft + progress, arrowTop + 10, progressColor);
         }
 
+        int statusColor = menu.isBlocked()
+                ? ARGB.color(255, 226, 126, 100)
+                : ARGB.color(255, 199, 185, 151);
+        context.centeredText(this.font, menu.getStatusText(), x + this.imageWidth / 2, y + 65, statusColor);
+
         super.extractContents(context, mouseX, mouseY, delta);
+    }
+
+    @Override
+    protected void extractTooltip(GuiGraphicsExtractor context, int mouseX, int mouseY) {
+        super.extractTooltip(context, mouseX, mouseY);
+        if (isHovering(58, 37, 24, 10, mouseX, mouseY)) {
+            context.setTooltipForNextFrame(this.font, menu.getStatusText(), mouseX, mouseY);
+        }
     }
 
     private static void drawBookHint(GuiGraphicsExtractor context, int x, int y) {

@@ -89,9 +89,28 @@ tasks.register('verifyLoaderJars') {
     }
 }
 
+tasks.register('verifyFabricMetadata') {
+    group = 'verification'
+    dependsOn ':fabric:processResources'
+    def processedMetadata = project(':fabric').layout.buildDirectory.file('resources/main/fabric.mod.json')
+    inputs.file(processedMetadata)
+    doLast {
+        def metadata = new groovy.json.JsonSlurper().parse(processedMetadata.get().asFile)
+        def declaredRange = metadata.depends['fabric-api']
+        def expectedRange = ">=${libs.versions.fabric.api.get()}"
+        if (declaredRange == '*' || declaredRange != expectedRange) {
+            throw new GradleException("Fabric API dependency must be ${expectedRange}, found ${declaredRange}")
+        }
+        if (metadata.license != 'MIT') {
+            throw new GradleException("Fabric license metadata must remain MIT")
+        }
+    }
+}
+
 tasks.named('assemble') { dependsOn subprojects.collect { it.tasks.named('assemble') } }
 tasks.named('check') {
     dependsOn tasks.named('verifyCommonIsolation')
+    dependsOn tasks.named('verifyFabricMetadata')
     dependsOn tasks.named('verifyLoaderJars')
     dependsOn subprojects.collect { it.tasks.named('check') }
 }

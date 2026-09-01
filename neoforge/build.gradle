@@ -6,6 +6,22 @@ sourceSets.main {
     resources.srcDir rootProject.file('common/src/main/resources')
 }
 
+sourceSets {
+    gametest {
+        java.srcDirs = ['src/gametest/java', rootProject.file('common/src/gametest/java')]
+        resources.srcDirs = ['src/gametest/resources']
+        compileClasspath += sourceSets.main.output + sourceSets.main.compileClasspath
+        runtimeClasspath += output + sourceSets.main.runtimeClasspath.filter { file ->
+            !file.name.contains('naming-service') && !file.name.contains('mixin-remapper')
+        }
+    }
+}
+
+configurations {
+    gametestImplementation.extendsFrom implementation
+    gametestRuntimeOnly.extendsFrom runtimeOnly
+}
+
 dependencies {
     minecraft libs.minecraft
     neoForge libs.neoforge
@@ -13,7 +29,38 @@ dependencies {
     seamlessApiNeoForge.builtBy gradle.includedBuild('seamless-api').task(':neoforge:jar')
     implementation seamlessApiNeoForge
 }
-loom { mods { seamlessdeconstructor { sourceSet sourceSets.main } } }
+loom {
+    mods {
+        seamlessdeconstructor {
+            sourceSet sourceSets.main
+            sourceSet sourceSets.gametest
+        }
+    }
+    runs {
+        gameTestServer {
+            runtimeEnvironment = 'gametestserver'
+            forgeTemplate 'gameTestServer'
+            source sourceSets.gametest
+            runDir 'build/gametest'
+            property 'neoforge.enabledGameTestNamespaces', 'seamlessdeconstructor'
+        }
+    }
+}
+
+tasks.named('runGameTestServer') {
+    doLast {
+        def latestLog = file('build/gametest/logs/latest.log')
+        if (!latestLog.isFile()) {
+            throw new GradleException("NeoForge GameTest run produced no latest.log")
+        }
+        def matcher = latestLog.getText('UTF-8') =~ /All (\d+) required tests passed/
+        if (!matcher.find() || matcher.group(1).toInteger() < 8) {
+            throw new GradleException(
+                    "NeoForge GameTest discovery guard expected seven Workbench tests plus the built-in test")
+        }
+    }
+}
+tasks.named('check') { dependsOn tasks.named('runGameTestServer') }
 def metadataProperties = [mod_version: project.version.toString(), neo_version_range: '[26.2.0.75,26.3)', minecraft_version_range: '[26.2,26.3)']
 processResources {
     inputs.properties metadataProperties
