@@ -2,8 +2,10 @@ package io.github.derkottersberg.seamlessdeconstructor.neoforge;
 
 import com.seamlessdeconstructor.SeamlessDeconstructorMod;
 import com.seamlessdeconstructor.registry.ModBlocks;
+import com.seamlessdeconstructor.registry.ModBlockEntities;
 import io.github.derkottersberg.seamlessdeconstructor.internal.PlatformServices;
 import java.nio.file.Path;
+import java.lang.reflect.InvocationTargetException;
 import java.util.function.Supplier;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.world.flag.FeatureFlags;
@@ -19,12 +21,15 @@ import net.neoforged.fml.common.Mod;
 import net.neoforged.fml.loading.FMLEnvironment;
 import net.neoforged.fml.loading.FMLPaths;
 import net.neoforged.neoforge.event.BuildCreativeModeTabContentsEvent;
+import net.neoforged.neoforge.capabilities.Capabilities;
+import net.neoforged.neoforge.capabilities.RegisterCapabilitiesEvent;
 import net.neoforged.neoforge.registries.DeferredRegister;
 import net.neoforged.neoforge.registries.DeferredHolder;
 
 @Mod(SeamlessDeconstructorMod.MOD_ID)
 public final class SeamlessDeconstructorNeoForge {
     public SeamlessDeconstructorNeoForge(IEventBus modEventBus) {
+        registerDevelopmentGameTests(modEventBus);
         NeoForgePlatformServices services = new NeoForgePlatformServices(modEventBus);
         SeamlessDeconstructorMod.initialize(services);
         modEventBus.addListener((BuildCreativeModeTabContentsEvent event) -> {
@@ -32,8 +37,24 @@ public final class SeamlessDeconstructorNeoForge {
                 event.accept(ModBlocks.REVERSE_DECONSTRUCTOR_ITEM.get());
             }
         });
+        modEventBus.addListener((RegisterCapabilitiesEvent event) -> event.registerBlockEntity(
+                Capabilities.Item.BLOCK,
+                ModBlockEntities.REVERSE_DECONSTRUCTOR_BLOCK_ENTITY.get(),
+                WorkbenchTransferHandler::new));
         if (FMLEnvironment.getDist().isClient()) {
             SeamlessDeconstructorNeoForgeClient.initialize(modEventBus);
+        }
+    }
+
+    private static void registerDevelopmentGameTests(IEventBus modEventBus) {
+        try {
+            Class<?> bootstrap = Class.forName(
+                    "io.github.derkottersberg.seamlessdeconstructor.neoforge.gametest.SeamlessDeconstructorNeoForgeGameTests");
+            bootstrap.getMethod("register", IEventBus.class).invoke(null, modEventBus);
+        } catch (ClassNotFoundException ignored) {
+            // Expected in production jars and normal development launches.
+        } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException exception) {
+            throw new IllegalStateException("Could not register Workbench NeoForge GameTests", exception);
         }
     }
 

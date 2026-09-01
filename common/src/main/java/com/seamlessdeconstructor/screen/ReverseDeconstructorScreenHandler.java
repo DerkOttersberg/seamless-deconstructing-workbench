@@ -1,5 +1,6 @@
 package com.seamlessdeconstructor.screen;
 
+import com.seamlessdeconstructor.block.entity.ReverseDeconstructorBlockEntity;
 import net.minecraft.world.Container;
 import net.minecraft.world.SimpleContainer;
 import net.minecraft.world.entity.player.Inventory;
@@ -10,6 +11,7 @@ import net.minecraft.world.inventory.SimpleContainerData;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
+import net.minecraft.network.chat.Component;
 
 public class ReverseDeconstructorScreenHandler extends AbstractContainerMenu {
     private static final int INVENTORY_SIZE = 8;
@@ -18,7 +20,7 @@ public class ReverseDeconstructorScreenHandler extends AbstractContainerMenu {
     private final ContainerData propertyDelegate;
 
     public ReverseDeconstructorScreenHandler(int syncId, Inventory playerInventory) {
-        this(syncId, playerInventory, new SimpleContainer(INVENTORY_SIZE), new SimpleContainerData(2));
+        this(syncId, playerInventory, new SimpleContainer(INVENTORY_SIZE), new SimpleContainerData(4));
     }
 
     public ReverseDeconstructorScreenHandler(int syncId, Inventory playerInventory, Container inventory, ContainerData propertyDelegate) {
@@ -38,7 +40,7 @@ public class ReverseDeconstructorScreenHandler extends AbstractContainerMenu {
         addSlot(new Slot(inventory, 1, 30, 42) {
             @Override
             public boolean mayPlace(ItemStack stack) {
-                return stack.is(Items.BOOK);
+                return ReverseDeconstructorBlockEntity.isPlainBook(stack);
             }
 
             @Override
@@ -88,7 +90,7 @@ public class ReverseDeconstructorScreenHandler extends AbstractContainerMenu {
                 }
                 slot.onQuickCraft(originalStack, newStack);
             } else {
-                if (originalStack.is(Items.BOOK)) {
+                if (ReverseDeconstructorBlockEntity.isPlainBook(originalStack)) {
                     if (!moveItemStackTo(originalStack, 1, 2, false)) {
                         return ItemStack.EMPTY;
                     }
@@ -125,7 +127,27 @@ public class ReverseDeconstructorScreenHandler extends AbstractContainerMenu {
     }
 
     public boolean isProcessing() {
-        return propertyDelegate.get(0) > 0;
+        return propertyDelegate.get(2) == ReverseDeconstructorBlockEntity.MACHINE_PROCESSING;
+    }
+
+    public boolean isBlocked() {
+        return propertyDelegate.get(2) == ReverseDeconstructorBlockEntity.MACHINE_BLOCKED;
+    }
+
+    public Component getStatusText() {
+        if (isBlocked()) {
+            return switch (propertyDelegate.get(3)) {
+                case ReverseDeconstructorBlockEntity.BLOCK_REASON_MISSING_BOOK ->
+                        Component.translatable("screen.seamlessdeconstructor.status.missing_book");
+                case ReverseDeconstructorBlockEntity.BLOCK_REASON_OUTPUT_FULL ->
+                        Component.translatable("screen.seamlessdeconstructor.status.output_full");
+                default -> Component.translatable("screen.seamlessdeconstructor.status.blocked");
+            };
+        }
+        if (isProcessing()) {
+            return Component.translatable("screen.seamlessdeconstructor.status.processing");
+        }
+        return Component.translatable("screen.seamlessdeconstructor.status.ready");
     }
 
     public int getScaledProgress() {

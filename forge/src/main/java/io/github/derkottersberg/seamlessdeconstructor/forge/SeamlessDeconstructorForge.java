@@ -2,7 +2,9 @@ package io.github.derkottersberg.seamlessdeconstructor.forge;
 
 import com.seamlessdeconstructor.SeamlessDeconstructorMod;
 import com.seamlessdeconstructor.registry.ModBlocks;
+import com.seamlessdeconstructor.block.entity.ReverseDeconstructorBlockEntity;
 import io.github.derkottersberg.seamlessdeconstructor.internal.PlatformServices;
+import java.lang.reflect.InvocationTargetException;
 import java.nio.file.Path;
 import java.util.function.Supplier;
 import net.minecraft.core.registries.Registries;
@@ -15,6 +17,7 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraftforge.event.BuildCreativeModeTabContentsEvent;
+import net.minecraftforge.event.AttachCapabilitiesEvent;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
 import net.minecraftforge.fml.loading.FMLEnvironment;
@@ -25,6 +28,7 @@ import net.minecraftforge.registries.RegistryObject;
 @Mod(SeamlessDeconstructorMod.MOD_ID)
 public final class SeamlessDeconstructorForge {
     public SeamlessDeconstructorForge(FMLJavaModLoadingContext context) {
+        registerDevelopmentGameTests(context);
         ForgePlatformServices services = new ForgePlatformServices(context);
         SeamlessDeconstructorMod.initialize(services);
         BuildCreativeModeTabContentsEvent.BUS.addListener(event -> {
@@ -32,8 +36,28 @@ public final class SeamlessDeconstructorForge {
                 event.accept(ModBlocks.REVERSE_DECONSTRUCTOR_ITEM.get());
             }
         });
+        AttachCapabilitiesEvent.BlockEntities.BUS.addListener(event -> {
+            if (event.getObject() instanceof ReverseDeconstructorBlockEntity workbench) {
+                WorkbenchCapabilityProvider provider = new WorkbenchCapabilityProvider(workbench);
+                event.addCapability(SeamlessDeconstructorMod.id("item_handler"), provider);
+                event.addListener(provider::invalidate);
+            }
+        });
         if (FMLEnvironment.dist.isClient()) {
             SeamlessDeconstructorForgeClient.initialize(context);
+        }
+    }
+
+    private static void registerDevelopmentGameTests(FMLJavaModLoadingContext context) {
+        try {
+            Class<?> bootstrap = Class.forName(
+                    "io.github.derkottersberg.seamlessdeconstructor.forge.gametest.SeamlessDeconstructorForgeGameTests");
+            bootstrap.getMethod("register", net.minecraftforge.eventbus.api.bus.BusGroup.class)
+                    .invoke(null, context.getModBusGroup());
+        } catch (ClassNotFoundException ignored) {
+            // Expected in production jars and normal development launches.
+        } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException exception) {
+            throw new IllegalStateException("Could not register Workbench Forge GameTests", exception);
         }
     }
 

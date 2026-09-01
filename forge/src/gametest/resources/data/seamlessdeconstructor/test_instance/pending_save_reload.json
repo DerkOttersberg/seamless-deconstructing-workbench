@@ -1,0 +1,9 @@
+{
+  "type": "minecraft:function",
+  "environment": "minecraft:default",
+  "function": "seamlessdeconstructor:pending_save_reload",
+  "max_ticks": 700,
+  "required": true,
+  "setup_ticks": 0,
+  "structure": "minecraft:empty"
+}

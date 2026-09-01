@@ -18,10 +18,23 @@ jobs:
       - uses: gradle/actions/wrapper-validation@v4
 
   loader-builds:
+    name: loader-builds (${{ matrix.lane }})
     strategy:
       fail-fast: false
       matrix:
-        loader: [fabric, forge, neoforge]
+        include:
+          - lane: fabric-api-0.158
+            loader: fabric
+            gradle_args: -PfabricApiVersion=0.158.0+26.2
+          - lane: fabric
+            loader: fabric
+            gradle_args: -PfabricApiVersion=0.159.0+26.2
+          - lane: forge
+            loader: forge
+            gradle_args: ''
+          - lane: neoforge
+            loader: neoforge
+            gradle_args: ''
     runs-on: ubuntu-24.04
     defaults:
       run:
@@ -32,33 +45,70 @@ jobs:
           path: suite/seamless-deconstructing-workbench
       - uses: actions/checkout@v4
         with:
-          repository: DerkOttersberg/Seamless-API
-          ref: 6bd3c1260323c04f0dd40da8eb040bb3480e811e
-          path: suite/Seamless-API
+          repository: DerkOttersberg/seamless-api
+          ref: f05f7b04a85c47626555d21816f507dea0889b99
+          path: suite/seamless-api
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: '25'
       - uses: gradle/actions/setup-gradle@v4
-      - run: ./gradlew :common:check :${{ matrix.loader }}:check :${{ matrix.loader }}:build
+      - run: ./gradlew :common:check :${{ matrix.loader }}:check :${{ matrix.loader }}:build ${{ matrix.gradle_args }}
+      - name: Upload ${{ matrix.lane }} reports and logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: seamless-deconstructing-workbench-${{ matrix.lane }}-reports
+          if-no-files-found: ignore
+          path: |
+            suite/seamless-deconstructing-workbench/**/build/reports/**
+            suite/seamless-deconstructing-workbench/**/build/test-results/**
+            suite/seamless-deconstructing-workbench/**/build/run/**/logs/**
+            suite/seamless-deconstructing-workbench/**/build/**/crash-reports/**
+            suite/seamless-deconstructing-workbench/**/run/**/crash-reports/**
+            suite/seamless-deconstructing-workbench/**/build/gametest/logs/**
 
   verification:
+    needs: [wrapper-validation, loader-builds]
+    if: ${{ always() }}
     runs-on: ubuntu-24.04
     defaults:
       run:
         working-directory: suite/seamless-deconstructing-workbench
     steps:
+      - name: Require successful protected prerequisite jobs
+        env:
+          WRAPPER_VALIDATION_RESULT: ${{ needs.wrapper-validation.result }}
+          LOADER_BUILDS_RESULT: ${{ needs.loader-builds.result }}
+        run: |
+          if [[ "$WRAPPER_VALIDATION_RESULT" != "success" || "$LOADER_BUILDS_RESULT" != "success" ]]; then
+            echo "Required jobs failed: wrapper-validation=$WRAPPER_VALIDATION_RESULT loader-builds=$LOADER_BUILDS_RESULT"
+            exit 1
+          fi
       - uses: actions/checkout@v4
         with:
           path: suite/seamless-deconstructing-workbench
       - uses: actions/checkout@v4
         with:
-          repository: DerkOttersberg/Seamless-API
-          ref: 6bd3c1260323c04f0dd40da8eb040bb3480e811e
-          path: suite/Seamless-API
+          repository: DerkOttersberg/seamless-api
+          ref: f05f7b04a85c47626555d21816f507dea0889b99
+          path: suite/seamless-api
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: '25'
       - uses: gradle/actions/setup-gradle@v4
       - run: ./gradlew clean check build
+      - name: Upload verification reports and logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: seamless-deconstructing-workbench-verification-reports
+          if-no-files-found: ignore
+          path: |
+            suite/seamless-deconstructing-workbench/**/build/reports/**
+            suite/seamless-deconstructing-workbench/**/build/test-results/**
+            suite/seamless-deconstructing-workbench/**/build/run/**/logs/**
+            suite/seamless-deconstructing-workbench/**/build/**/crash-reports/**
+            suite/seamless-deconstructing-workbench/**/run/**/crash-reports/**
+            suite/seamless-deconstructing-workbench/**/build/gametest/logs/**

@@ -1,0 +1,9 @@
+{
+  "type": "minecraft:function",
+  "environment": "minecraft:default",
+  "structure": "minecraft:empty",
+  "function": "seamlessdeconstructor:damaged_input",
+  "max_ticks": 650,
+  "setup_ticks": 0,
+  "required": true
+}

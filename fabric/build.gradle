@@ -3,7 +3,9 @@ base { archivesName = rootProject.archives_base_name }
 dependencies {
     minecraft libs.minecraft
     implementation libs.fabric.loader
-    implementation libs.fabric.api
+    def selectedFabricApi = providers.gradleProperty('fabricApiVersion')
+            .getOrElse(libs.versions.fabric.api.asProvider().get())
+    implementation "net.fabricmc.fabric-api:fabric-api:${selectedFabricApi}"
     def seamlessApiFabric = files(rootProject.file("../seamless-api/fabric/build/libs/seamless-api-${libs.versions.seamless.api.get()}-fabric.jar"))
     seamlessApiFabric.builtBy gradle.includedBuild('seamless-api').task(':fabric:jar')
     implementation seamlessApiFabric
@@ -28,10 +30,31 @@ dependencies {
     gametestImplementation project(':common')
 }
 
+sourceSets.gametest.java.srcDir rootProject.file('common/src/gametest/java')
+
+tasks.named('runGameTest') {
+    doLast {
+        def latestLog = file('build/run/gameTest/logs/latest.log')
+        if (!latestLog.isFile()) {
+            throw new GradleException("Fabric GameTest run produced no latest.log")
+        }
+        def matcher = latestLog.getText('UTF-8') =~ /All (\d+) required tests passed/
+        if (!matcher.find() || matcher.group(1).toInteger() < 9) {
+            throw new GradleException(
+                    "Fabric GameTest discovery guard expected eight Workbench tests plus the built-in test")
+        }
+    }
+}
+tasks.named('check') { dependsOn tasks.named('runGameTest') }
+
 def metadataVersion = project.version.toString()
+def fabricApiRange = libs.versions.fabric.api.range.get()
 processResources {
     inputs.property 'version', metadataVersion
-    filesMatching('fabric.mod.json') { expand version: metadataVersion }
+    inputs.property 'fabric_api_range', fabricApiRange
+    filesMatching('fabric.mod.json') {
+        expand version: metadataVersion, fabric_api_range: fabricApiRange
+    }
 }
 tasks.named('jar', Jar) {
     from project(':common').sourceSets.main.output

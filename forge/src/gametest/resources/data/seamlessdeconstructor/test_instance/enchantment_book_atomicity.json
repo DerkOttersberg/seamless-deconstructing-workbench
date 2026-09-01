@@ -1,0 +1,9 @@
+{
+  "type": "minecraft:function",
+  "environment": "minecraft:default",
+  "function": "seamlessdeconstructor:enchantment_book_atomicity",
+  "max_ticks": 650,
+  "required": true,
+  "setup_ticks": 0,
+  "structure": "minecraft:empty"
+}
