@@ -63,6 +63,8 @@ jobs:
             suite/seamless-deconstructing-workbench/**/build/reports/**
             suite/seamless-deconstructing-workbench/**/build/test-results/**
             suite/seamless-deconstructing-workbench/**/build/run/**/logs/**
+            suite/seamless-deconstructing-workbench/**/build/**/crash-reports/**
+            suite/seamless-deconstructing-workbench/**/run/**/crash-reports/**
             suite/seamless-deconstructing-workbench/**/build/gametest/logs/**
 
   verification:
@@ -95,4 +97,6 @@ jobs:
             suite/seamless-deconstructing-workbench/**/build/reports/**
             suite/seamless-deconstructing-workbench/**/build/test-results/**
             suite/seamless-deconstructing-workbench/**/build/run/**/logs/**
+            suite/seamless-deconstructing-workbench/**/build/**/crash-reports/**
+            suite/seamless-deconstructing-workbench/**/run/**/crash-reports/**
             suite/seamless-deconstructing-workbench/**/build/gametest/logs/**
