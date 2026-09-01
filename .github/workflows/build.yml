@@ -46,7 +46,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           repository: DerkOttersberg/seamless-api
-          ref: 3e949e4688d7a4bb87b0e4c942b77fd9ef658077
+          ref: f05f7b04a85c47626555d21816f507dea0889b99
           path: suite/seamless-api
       - uses: actions/setup-java@v4
         with:
@@ -91,7 +91,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           repository: DerkOttersberg/seamless-api
-          ref: 3e949e4688d7a4bb87b0e4c942b77fd9ef658077
+          ref: f05f7b04a85c47626555d21816f507dea0889b99
           path: suite/seamless-api
       - uses: actions/setup-java@v4
         with:
