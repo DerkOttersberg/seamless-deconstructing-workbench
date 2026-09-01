@@ -39,9 +39,9 @@ tasks.named('runGameTest') {
             throw new GradleException("Fabric GameTest run produced no latest.log")
         }
         def matcher = latestLog.getText('UTF-8') =~ /All (\d+) required tests passed/
-        if (!matcher.find() || matcher.group(1).toInteger() < 8) {
+        if (!matcher.find() || matcher.group(1).toInteger() < 9) {
             throw new GradleException(
-                    "Fabric GameTest discovery guard expected seven Workbench tests plus the built-in test")
+                    "Fabric GameTest discovery guard expected eight Workbench tests plus the built-in test")
         }
     }
 }
