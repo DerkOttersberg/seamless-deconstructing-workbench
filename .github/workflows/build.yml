@@ -35,7 +35,7 @@ jobs:
           repository: DerkOttersberg/Seamless-API
           ref: 6bd3c1260323c04f0dd40da8eb040bb3480e811e
           path: suite/Seamless-API
-      - uses: actions/setup-java@v4
+      - uses: actions/setup-java@v6
         with:
           distribution: temurin
           java-version: '25'
@@ -56,7 +56,7 @@ jobs:
           repository: DerkOttersberg/Seamless-API
           ref: 6bd3c1260323c04f0dd40da8eb040bb3480e811e
           path: suite/Seamless-API
-      - uses: actions/setup-java@v4
+      - uses: actions/setup-java@v6
         with:
           distribution: temurin
           java-version: '25'
