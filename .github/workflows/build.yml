@@ -12,7 +12,7 @@ jobs:
   wrapper-validation:
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           path: suite/seamless-deconstructing-workbench
       - uses: gradle/actions/wrapper-validation@v4
@@ -27,10 +27,10 @@ jobs:
       run:
         working-directory: suite/seamless-deconstructing-workbench
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           path: suite/seamless-deconstructing-workbench
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           repository: DerkOttersberg/Seamless-API
           ref: 6bd3c1260323c04f0dd40da8eb040bb3480e811e
@@ -48,10 +48,10 @@ jobs:
       run:
         working-directory: suite/seamless-deconstructing-workbench
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           path: suite/seamless-deconstructing-workbench
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           repository: DerkOttersberg/Seamless-API
           ref: 6bd3c1260323c04f0dd40da8eb040bb3480e811e
