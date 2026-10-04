@@ -32,7 +32,7 @@ public final class ModBlocks {
         BlockBehaviour.Properties blockProperties = BlockBehaviour.Properties.ofFullCopy(Blocks.CRAFTING_TABLE)
                 .noOcclusion()
                 .isSuffocating((state, level, pos) -> false)
-                .isViewBlocking((state, level, pos) -> false)
+                .isViewBlocking((state, level, pos, bounds) -> false)
                 .isValidSpawn((state, level, pos, entityType) -> false)
                 .strength(2.5F)
                 .sound(SoundType.WOOD)

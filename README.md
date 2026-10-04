@@ -1,8 +1,12 @@
 # Seamless Deconstructing Workbench
 
+This is the `26.3` source branch. For Minecraft 26.2, use the `26.2` branch;
+all three modloaders are included in each version branch. Forge/NeoForge's
+pinned 26.3 loaders are upstream beta builds. See [REPOSITORY_WORKFLOW.md](REPOSITORY_WORKFLOW.md).
+
 Seamless Deconstructing Workbench adds a salvage workbench that resolves
 shaped crafting recipes and returns their ingredients with configurable loss
-and durability scaling. Version `2.1.0+mc26.2` supports Minecraft Java 26.2
+and durability scaling. Version `2.1.1+mc26.3` supports Minecraft Java 26.3
 on Fabric, Forge, and NeoForge and requires Seamless API 2.x.
 
 The registry namespace remains `seamlessdeconstructor`, including the

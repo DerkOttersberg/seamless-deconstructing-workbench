@@ -1,7 +1,7 @@
 plugins { id 'dev.architectury.loom-no-remap' }
 base { archivesName = rootProject.archives_base_name }
 
-// Forge 26.2 places ordinary classpath jars in its cleaned bootstrap layer.
+// Forge 26.3 places ordinary classpath jars in its cleaned bootstrap layer.
 // Compile the shared sources into the loader output so common and entrypoint
 // classes live in the same transformed module during both development and use.
 sourceSets.main {
@@ -14,13 +14,20 @@ sourceSets {
         java.srcDirs = ['src/gametest/java', rootProject.file('common/src/gametest/java')]
         resources.srcDirs = ['src/gametest/resources']
         compileClasspath += sourceSets.main.output + sourceSets.main.compileClasspath
-        runtimeClasspath += output + sourceSets.main.runtimeClasspath
+        runtimeClasspath += output + compileClasspath + sourceSets.main.runtimeClasspath
     }
 }
 
 configurations {
     gametestImplementation.extendsFrom implementation
     gametestRuntimeOnly.extendsFrom runtimeOnly
+}
+
+// All 26.3 classes already use official names. Legacy remapping services
+// create a second bootstrap-layer copy of event-bus parameter types.
+configurations.forgeRuntimeLibrary {
+    exclude group: 'dev.architectury', module: 'architectury-naming-service'
+    exclude group: 'dev.architectury', module: 'architectury-mixin-remapper-service'
 }
 
 dependencies {
@@ -31,6 +38,7 @@ dependencies {
     implementation seamlessApiForge
 }
 def gameTestMappings = file('identity-mappings.tiny')
+def gameTestModRoot = layout.buildDirectory.dir('gametest-mod')
 loom {
     mods {
         seamlessdeconstructor {
@@ -43,10 +51,11 @@ loom {
             runtimeEnvironment = 'gametestserver'
             forgeTemplate 'gameTestServer'
             source sourceSets.gametest
+            environmentVariable 'MOD_CLASSES', "seamlessdeconstructor%%${gameTestModRoot.get().asFile.absolutePath}"
             runDir 'build/gametest'
             property 'forge.enabledGameTestNamespaces', 'seamlessdeconstructor'
             // Forge 65's Loom launch template omits these properties. The
-            // 26.2 release is unobfuscated, so an identity map is sufficient.
+            // 26.3 release is unobfuscated, so an identity map is sufficient.
             property 'architectury.naming.mappingsPath', gameTestMappings.absolutePath
             property 'architectury.naming.sourceNamespace', 'official'
             property 'architectury.mixinRemapper.mappingsPath', gameTestMappings.absolutePath
@@ -55,7 +64,23 @@ loom {
     }
 }
 
+// Forge's classpath locator treats Loom's main and test source-set unions as
+// duplicate mods and can select the main-only union. Stage one test-only mod
+// root so test callbacks share the transformed game/event-bus classloader.
+def stageGameTestMod = tasks.register('stageGameTestMod', Sync) {
+    dependsOn tasks.named('classes'), tasks.named('gametestClasses')
+    from sourceSets.main.output
+    from sourceSets.gametest.output
+    into gameTestModRoot
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+}
+
 tasks.named('runGameTestServer') {
+    dependsOn stageGameTestMod
+    // MOD_CLASSES is set on the run configuration above: Loom replaces JavaExec
+    // environment values during execution. Exclude the old source roots here too.
+    def sourceRoots = (sourceSets.main.output.files + sourceSets.gametest.output.files) as Set
+    classpath = files(gameTestModRoot) + classpath.filter { !sourceRoots.contains(it) }
     inputs.file(gameTestMappings)
     doLast {
         def latestLog = file('build/gametest/logs/latest.log')
@@ -70,7 +95,7 @@ tasks.named('runGameTestServer') {
     }
 }
 tasks.named('check') { dependsOn tasks.named('runGameTestServer') }
-def metadataProperties = [mod_version: project.version.toString(), loader_version_range: '[65,)', forge_version_range: '[65.1.3,66)', minecraft_version_range: '[26.2,26.3)']
+def metadataProperties = [mod_version: project.version.toString(), loader_version_range: '[66,)', forge_version_range: '[66.0.9,67)', minecraft_version_range: '[26.3,26.4)']
 processResources {
     inputs.properties metadataProperties
     filesMatching('META-INF/mods.toml') { expand metadataProperties }

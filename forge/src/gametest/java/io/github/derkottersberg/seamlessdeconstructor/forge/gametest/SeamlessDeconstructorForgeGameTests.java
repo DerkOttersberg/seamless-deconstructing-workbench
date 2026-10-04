@@ -5,6 +5,9 @@ import com.seamlessdeconstructor.block.entity.ReverseDeconstructorBlockEntity;
 import com.seamlessdeconstructor.gametest.WorkbenchGameTestScenario;
 import com.seamlessdeconstructor.registry.ModBlocks;
 import java.util.function.Consumer;
+import java.util.function.Supplier;
+import java.util.Map;
+import java.util.LinkedHashMap;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.Direction;
@@ -15,36 +18,41 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.eventbus.api.bus.BusGroup;
+import net.minecraftforge.gametest.GameTestNamespace;
+import net.minecraftforge.gametest.GameTestDontPrefix;
 import net.minecraftforge.items.IItemHandler;
-import net.minecraftforge.registries.DeferredRegister;
+import net.minecraftforge.registries.RegisterEvent;
 
+@GameTestNamespace("seamlessdeconstructor")
+@GameTestDontPrefix
 public final class SeamlessDeconstructorForgeGameTests {
-    private static final DeferredRegister<Consumer<GameTestHelper>> TEST_FUNCTIONS =
-            DeferredRegister.create(Registries.TEST_FUNCTION, SeamlessDeconstructorMod.MOD_ID);
+    // Vanilla test registries do not exist during early mod construction in 26.3.
+    // Keep only factories here and resolve/register them at the registry event.
+    private static final Map<String, Supplier<Consumer<GameTestHelper>>> TEST_FUNCTIONS = new LinkedHashMap<>();
 
     static {
-        TEST_FUNCTIONS.register(
+        TEST_FUNCTIONS.put(
                 "processes_crafting_table",
                 () -> WorkbenchGameTestScenario::processesCraftingTableIntoIngredients);
-        TEST_FUNCTIONS.register(
+        TEST_FUNCTIONS.put(
                 "enchantment_book_atomicity",
                 () -> WorkbenchGameTestScenario::transfersEnchantmentsAndConsumesBookAtomically);
-        TEST_FUNCTIONS.register(
+        TEST_FUNCTIONS.put(
                 "damaged_input",
                 () -> WorkbenchGameTestScenario::damagedInputUsesDurabilityAdjustedSalvage);
-        TEST_FUNCTIONS.register(
+        TEST_FUNCTIONS.put(
                 "modified_book_rejected",
                 () -> WorkbenchGameTestScenario::rejectsModifiedBooksAsEnchantmentCarriers);
-        TEST_FUNCTIONS.register(
+        TEST_FUNCTIONS.put(
                 "pending_save_reload",
                 () -> WorkbenchGameTestScenario::blockedOperationSurvivesSaveReloadAndCommitsWithoutOverflow);
-        TEST_FUNCTIONS.register(
+        TEST_FUNCTIONS.put(
                 "sided_automation",
                 () -> WorkbenchGameTestScenario::exposesStableSidedAutomationRules);
-        TEST_FUNCTIONS.register(
+        TEST_FUNCTIONS.put(
                 "automation_capability",
                 () -> SeamlessDeconstructorForgeGameTests::exposesRegisteredItemHandlers);
-        TEST_FUNCTIONS.register(
+        TEST_FUNCTIONS.put(
                 "screen_shift_click",
                 () -> WorkbenchGameTestScenario::shiftClickRoutesBooksInputsAndOutputs);
     }
@@ -53,7 +61,12 @@ public final class SeamlessDeconstructorForgeGameTests {
     }
 
     public static void register(BusGroup modBusGroup) {
-        TEST_FUNCTIONS.register(modBusGroup);
+        RegisterEvent.getBus(modBusGroup).addListener(event -> {
+            if (event.getRegistryKey() == Registries.TEST_FUNCTION) {
+                TEST_FUNCTIONS.forEach((path, factory) ->
+                    event.register(Registries.TEST_FUNCTION, SeamlessDeconstructorMod.id(path), factory));
+            }
+        });
     }
 
     private static void exposesRegisteredItemHandlers(GameTestHelper helper) {

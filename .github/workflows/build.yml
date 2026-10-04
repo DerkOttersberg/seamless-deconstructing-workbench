@@ -2,7 +2,7 @@ name: build
 
 on:
   push:
-    branches: [main, 'port/**', 'support/**', 'feat/**', 'fix/**', 'release/**']
+    branches: [main, '26.2', '26.3', 'port/**', 'support/**', 'feat/**', 'fix/**', 'release/**']
   pull_request:
 
 permissions:
@@ -23,12 +23,9 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - lane: fabric-api-0.158
-            loader: fabric
-            gradle_args: -PfabricApiVersion=0.158.0+26.2
           - lane: fabric
             loader: fabric
-            gradle_args: -PfabricApiVersion=0.159.0+26.2
+            gradle_args: -PfabricApiVersion=0.161.0+26.3
           - lane: forge
             loader: forge
             gradle_args: ''
@@ -46,7 +43,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           repository: DerkOttersberg/seamless-api
-          ref: f05f7b04a85c47626555d21816f507dea0889b99
+          ref: aa8e793995b0deaa85f5283e3056eb702bc8611a
           path: suite/seamless-api
       - uses: actions/setup-java@v4
         with:
@@ -91,7 +88,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           repository: DerkOttersberg/seamless-api
-          ref: f05f7b04a85c47626555d21816f507dea0889b99
+          ref: aa8e793995b0deaa85f5283e3056eb702bc8611a
           path: suite/seamless-api
       - uses: actions/setup-java@v4
         with:

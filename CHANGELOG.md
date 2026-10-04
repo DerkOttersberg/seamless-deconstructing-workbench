@@ -1,5 +1,12 @@
 # Changelog
 
+## 2.1.1+mc26.3
+
+- Adapt block predicates, block APIs, and pose rotations. Preserve registry IDs, fractional output rules, config migration, and the empty book-slot tooltip. Isolate Forge development GameTests from production jars.
+- Minecraft 26.3 only, Java 25; Fabric, Forge, and NeoForge.
+- Forge 66.0.9 and NeoForge 26.3.0.48-beta are upstream beta loaders.
+- Existing 26.2 releases remain separate; no blanket 26.* compatibility.
+
 ## 2.1.0+mc26.2
 
 - Added a dedicated Mods-menu icon on all loaders.

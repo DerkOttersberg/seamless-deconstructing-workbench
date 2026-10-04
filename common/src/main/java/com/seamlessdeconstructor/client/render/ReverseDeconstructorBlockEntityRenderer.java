@@ -78,7 +78,7 @@ public class ReverseDeconstructorBlockEntityRenderer implements BlockEntityRende
         if (state.hasInput) {
             matrices.pushPose();
             matrices.translate(0.5, 1.0375, 0.5);
-            matrices.mulPose(Axis.XP.rotationDegrees(90.0F));
+            matrices.rotate(Axis.XP.rotationDegrees(90.0F));
             matrices.scale(0.42F, 0.42F, 0.42F);
             state.inputState.submit(matrices, queue, state.itemLightCoords, OverlayTexture.NO_OVERLAY, 0);
             matrices.popPose();
@@ -93,9 +93,9 @@ public class ReverseDeconstructorBlockEntityRenderer implements BlockEntityRende
                 float[] pos = OUTPUT_POSITIONS[i];
                 matrices.pushPose();
                 matrices.translate(0.5, 0.275, 0.5);
-                matrices.mulPose(Axis.YP.rotationDegrees(yawForFacing(state.facing)));
+                matrices.rotate(Axis.YP.rotationDegrees(yawForFacing(state.facing)));
                 matrices.translate(pos[0], 0.0, pos[1]);
-                matrices.mulPose(Axis.XP.rotationDegrees(90.0F));
+                matrices.rotate(Axis.XP.rotationDegrees(90.0F));
                 matrices.scale(0.24F, 0.24F, 0.24F);
                 state.outputStates[i].submit(matrices, queue, state.itemLightCoords, OverlayTexture.NO_OVERLAY, 0);
                 matrices.popPose();

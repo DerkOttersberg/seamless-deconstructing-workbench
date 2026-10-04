@@ -1,6 +1,5 @@
 package com.seamlessdeconstructor.block;
 
-import com.mojang.serialization.MapCodec;
 import com.seamlessdeconstructor.block.entity.ReverseDeconstructorBlockEntity;
 import com.seamlessdeconstructor.registry.ModBlockEntities;
 import net.minecraft.core.BlockPos;
@@ -28,7 +27,6 @@ import net.minecraft.world.level.block.state.properties.EnumProperty;
 import net.minecraft.world.phys.BlockHitResult;
 
 public class ReverseDeconstructorBlock extends BaseEntityBlock {
-    public static final MapCodec<ReverseDeconstructorBlock> CODEC = simpleCodec(ReverseDeconstructorBlock::new);
     public static final EnumProperty<Direction> FACING = BlockStateProperties.HORIZONTAL_FACING;
     public static final BooleanProperty ACTIVE = BooleanProperty.create("active");
 
@@ -37,11 +35,6 @@ public class ReverseDeconstructorBlock extends BaseEntityBlock {
         this.registerDefaultState(this.stateDefinition.any()
                 .setValue(FACING, Direction.NORTH)
                 .setValue(ACTIVE, false));
-    }
-
-    @Override
-    protected MapCodec<? extends BaseEntityBlock> codec() {
-        return CODEC;
     }
 
     @Override
