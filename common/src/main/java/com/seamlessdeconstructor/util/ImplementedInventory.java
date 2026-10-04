@@ -9,6 +9,10 @@ import net.minecraft.world.item.ItemStack;
 public interface ImplementedInventory extends Container {
     NonNullList<ItemStack> getItems();
 
+    default int getMaxStackSize(ItemStack stack) {
+        return Math.min(getMaxStackSize(), stack.getMaxStackSize());
+    }
+
     @Override
     default int getContainerSize() {
         return getItems().size();
@@ -42,7 +46,7 @@ public interface ImplementedInventory extends Container {
     @Override
     default void setItem(int slot, ItemStack stack) {
         getItems().set(slot, stack);
-        stack.limitSize(getMaxStackSize(stack));
+        stack.setCount(Math.min(stack.getCount(), getMaxStackSize(stack)));
     }
 
     @Override

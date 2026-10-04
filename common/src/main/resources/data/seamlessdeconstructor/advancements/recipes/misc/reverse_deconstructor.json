@@ -5,7 +5,11 @@
       "trigger": "minecraft:inventory_changed",
       "conditions": {
         "items": [
-          { "items": "minecraft:stone_bricks" }
+          {
+            "items": [
+              "minecraft:stone_bricks"
+            ]
+          }
         ]
       }
     },
@@ -13,7 +17,9 @@
       "trigger": "minecraft:inventory_changed",
       "conditions": {
         "items": [
-          { "tag": "minecraft:planks" }
+          {
+            "tag": "minecraft:planks"
+          }
         ]
       }
     },
@@ -21,13 +27,21 @@
       "trigger": "minecraft:inventory_changed",
       "conditions": {
         "items": [
-          { "items": "minecraft:cobblestone" }
+          {
+            "items": [
+              "minecraft:cobblestone"
+            ]
+          }
         ]
       }
     }
   },
   "requirements": [
-    ["has_stone_bricks", "has_planks", "has_cobblestone"]
+    [
+      "has_stone_bricks",
+      "has_planks",
+      "has_cobblestone"
+    ]
   ],
   "rewards": {
     "recipes": [

@@ -19,8 +19,8 @@ public final class ModBlockEntities {
 
         REVERSE_DECONSTRUCTOR_BLOCK_ENTITY = platform.registerBlockEntityType(
                 "reverse_deconstructor",
-                () -> new BlockEntityType<>(
+                () -> BlockEntityType.Builder.of(
                         ReverseDeconstructorBlockEntity::new,
-                        Set.of(ModBlocks.REVERSE_DECONSTRUCTOR.get())));
+                        ModBlocks.REVERSE_DECONSTRUCTOR.get()).build(null));
     }
 }

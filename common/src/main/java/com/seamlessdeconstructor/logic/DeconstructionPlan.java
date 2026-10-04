@@ -1,6 +1,6 @@
 package com.seamlessdeconstructor.logic;
 
-import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.item.Item;
 
@@ -9,21 +9,21 @@ import java.util.Collections;
 import java.util.Map;
 
 public final class DeconstructionPlan {
-    private final Identifier recipeId;
+    private final ResourceLocation recipeId;
     private final Map<Item, Double> unitsPerOutput;
     private final boolean damageScalingEnabled;
 
-    public DeconstructionPlan(Identifier recipeId, Map<Item, Double> unitsPerOutput) {
+    public DeconstructionPlan(ResourceLocation recipeId, Map<Item, Double> unitsPerOutput) {
         this(recipeId, unitsPerOutput, true);
     }
 
-    public DeconstructionPlan(Identifier recipeId, Map<Item, Double> unitsPerOutput, boolean damageScalingEnabled) {
+    public DeconstructionPlan(ResourceLocation recipeId, Map<Item, Double> unitsPerOutput, boolean damageScalingEnabled) {
         this.recipeId = recipeId;
         this.unitsPerOutput = Collections.unmodifiableMap(new LinkedHashMap<>(unitsPerOutput));
         this.damageScalingEnabled = damageScalingEnabled;
     }
 
-    public Identifier recipeId() {
+    public ResourceLocation recipeId() {
         return recipeId;
     }
 

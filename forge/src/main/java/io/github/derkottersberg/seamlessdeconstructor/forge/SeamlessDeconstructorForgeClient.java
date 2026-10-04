@@ -7,7 +7,6 @@ import java.util.function.Supplier;
 import net.minecraft.client.gui.screens.MenuScreens;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
-import net.minecraft.client.renderer.blockentity.state.BlockEntityRenderState;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.MenuType;
 import net.minecraft.world.level.block.entity.BlockEntity;
@@ -23,9 +22,9 @@ final class SeamlessDeconstructorForgeClient {
 
     static void initialize(FMLJavaModLoadingContext context) {
         SeamlessDeconstructorClientBootstrap.initialize(new ForgeClientPlatformServices(context));
-        context.getContainer().registerExtensionPoint(
+        net.minecraftforge.fml.ModLoadingContext.get().registerExtensionPoint(
                 ConfigScreenHandler.ConfigScreenFactory.class,
-                () -> new ConfigScreenHandler.ConfigScreenFactory(SeamlessDeconstructorConfigScreen::new));
+                () -> new ConfigScreenHandler.ConfigScreenFactory((client, parent) -> new SeamlessDeconstructorConfigScreen(parent)));
     }
 
     private static final class ForgeClientPlatformServices implements ClientPlatformServices {
@@ -39,15 +38,15 @@ final class SeamlessDeconstructorForgeClient {
         public <M extends AbstractContainerMenu, S extends AbstractContainerScreen<M>> void registerScreen(
                 Supplier<MenuType<M>> type,
                 ScreenFactory<M, S> constructor) {
-            FMLClientSetupEvent.getBus(context.getModBusGroup()).addListener(event ->
+            context.getModEventBus().addListener((FMLClientSetupEvent event) ->
                     event.enqueueWork(() -> MenuScreens.register(type.get(), constructor::create)));
         }
 
         @Override
-        public <T extends BlockEntity, S extends BlockEntityRenderState> void registerBlockEntityRenderer(
+        public <T extends BlockEntity> void registerBlockEntityRenderer(
                 Supplier<BlockEntityType<T>> type,
-                BlockEntityRendererProvider<T, S> provider) {
-            EntityRenderersEvent.RegisterRenderers.BUS.addListener(event ->
+                BlockEntityRendererProvider<T> provider) {
+            context.getModEventBus().addListener((EntityRenderersEvent.RegisterRenderers event) ->
                     event.registerBlockEntityRenderer(type.get(), provider));
         }
     }

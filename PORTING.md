@@ -24,11 +24,20 @@ Seamless API remains an external 2.x dependency and must not be shaded.
 ## Port checklist
 
 1. Update `gradle/libs.versions.toml` and resource pack/data pack metadata.
-2. Run `gradlew.bat clean check build` using the target Java version.
+2. Run `gradlew.bat clean check build` on Java 25, using Java 17 toolchains.
 3. Inspect all jars for loader-metadata isolation and canonical filenames.
-4. Boot dedicated servers and clients for all three loaders.
+4. Boot dedicated servers and clients for both loaders.
 5. Run the live processing GameTest and check recipe resolution, fractional
    output, enchanted-item handling, automation faces, and menu closure.
 6. Upgrade only copied historical worlds/configs and confirm the registered
    workbench survives with its inventory and block entity intact.
-7. Run the matching four-mod combined profiles and retain logs/screenshots.
+7. Run the matching five-mod combined profiles and retain logs/screenshots.
+
+## Legacy build boundary
+
+This branch uses regular `dev.architectury.loom` and official Mojang mappings.
+Compile shared sources into each loader module; do not put a remapped common jar
+on a named development runtime classpath. Both loaders need legacy mixin refmaps.
+Only loader remapped `build/libs` jars are distributable. Java 25 hosts Gradle;
+Java 17 is used for compilation and Minecraft. Keep plural 1.20.1 data directories
+and NBT item persistence; newer data components are not interchangeable.

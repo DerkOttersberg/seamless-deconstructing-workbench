@@ -3,7 +3,6 @@ package io.github.derkottersberg.seamlessdeconstructor.internal;
 import java.util.function.Supplier;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
-import net.minecraft.client.renderer.blockentity.state.BlockEntityRenderState;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.MenuType;
 import net.minecraft.world.entity.player.Inventory;
@@ -17,9 +16,9 @@ public interface ClientPlatformServices {
             Supplier<MenuType<M>> type,
             ScreenFactory<M, S> constructor);
 
-    <T extends BlockEntity, S extends BlockEntityRenderState> void registerBlockEntityRenderer(
+    <T extends BlockEntity> void registerBlockEntityRenderer(
             Supplier<BlockEntityType<T>> type,
-            BlockEntityRendererProvider<T, S> provider);
+            BlockEntityRendererProvider<T> provider);
 
     @FunctionalInterface
     interface ScreenFactory<M extends AbstractContainerMenu, S extends AbstractContainerScreen<M>> {

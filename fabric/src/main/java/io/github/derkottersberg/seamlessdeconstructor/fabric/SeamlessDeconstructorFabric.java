@@ -7,7 +7,7 @@ import io.github.derkottersberg.seamlessdeconstructor.internal.PlatformServices;
 import java.nio.file.Path;
 import java.util.function.Supplier;
 import net.fabricmc.api.ModInitializer;
-import net.fabricmc.fabric.api.creativetab.v1.CreativeModeTabEvents;
+import net.fabricmc.fabric.api.itemgroup.v1.ItemGroupEvents;
 import net.fabricmc.fabric.api.transfer.v1.item.ItemStorage;
 import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.core.Registry;
@@ -26,10 +26,12 @@ public final class SeamlessDeconstructorFabric implements ModInitializer {
     @Override
     public void onInitialize() {
         SeamlessDeconstructorMod.initialize(new FabricPlatformServices());
+        net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents.END_DATA_PACK_RELOAD.register(
+                (server, resources, success) -> { if (success) com.seamlessdeconstructor.logic.DeconstructionResolver.invalidateCache(); });
         ItemStorage.SIDED.registerForBlockEntity(
                 WorkbenchStorageAdapter::new,
                 ModBlockEntities.REVERSE_DECONSTRUCTOR_BLOCK_ENTITY.get());
-        CreativeModeTabEvents.modifyOutputEvent(CreativeModeTabs.FUNCTIONAL_BLOCKS)
+        ItemGroupEvents.modifyEntriesEvent(CreativeModeTabs.FUNCTIONAL_BLOCKS)
                 .register(entries -> entries.accept(ModBlocks.REVERSE_DECONSTRUCTOR_ITEM.get()));
     }
 

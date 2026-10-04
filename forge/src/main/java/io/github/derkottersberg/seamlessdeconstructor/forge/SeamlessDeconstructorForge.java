@@ -4,7 +4,6 @@ import com.seamlessdeconstructor.SeamlessDeconstructorMod;
 import com.seamlessdeconstructor.registry.ModBlocks;
 import com.seamlessdeconstructor.block.entity.ReverseDeconstructorBlockEntity;
 import io.github.derkottersberg.seamlessdeconstructor.internal.PlatformServices;
-import java.lang.reflect.InvocationTargetException;
 import java.nio.file.Path;
 import java.util.function.Supplier;
 import net.minecraft.core.registries.Registries;
@@ -18,6 +17,7 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraftforge.event.BuildCreativeModeTabContentsEvent;
 import net.minecraftforge.event.AttachCapabilitiesEvent;
+import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
 import net.minecraftforge.fml.loading.FMLEnvironment;
@@ -27,37 +27,26 @@ import net.minecraftforge.registries.RegistryObject;
 
 @Mod(SeamlessDeconstructorMod.MOD_ID)
 public final class SeamlessDeconstructorForge {
-    public SeamlessDeconstructorForge(FMLJavaModLoadingContext context) {
-        registerDevelopmentGameTests(context);
+    public SeamlessDeconstructorForge() {
+        FMLJavaModLoadingContext context = FMLJavaModLoadingContext.get();
         ForgePlatformServices services = new ForgePlatformServices(context);
         SeamlessDeconstructorMod.initialize(services);
-        BuildCreativeModeTabContentsEvent.BUS.addListener(event -> {
+        context.getModEventBus().addListener((BuildCreativeModeTabContentsEvent event) -> {
             if (event.getTabKey().equals(CreativeModeTabs.FUNCTIONAL_BLOCKS)) {
                 event.accept(ModBlocks.REVERSE_DECONSTRUCTOR_ITEM.get());
             }
         });
-        AttachCapabilitiesEvent.BlockEntities.BUS.addListener(event -> {
+        MinecraftForge.EVENT_BUS.addGenericListener(BlockEntity.class, (AttachCapabilitiesEvent<BlockEntity> event) -> {
             if (event.getObject() instanceof ReverseDeconstructorBlockEntity workbench) {
                 WorkbenchCapabilityProvider provider = new WorkbenchCapabilityProvider(workbench);
                 event.addCapability(SeamlessDeconstructorMod.id("item_handler"), provider);
                 event.addListener(provider::invalidate);
             }
         });
+        MinecraftForge.EVENT_BUS.addListener((net.minecraftforge.event.OnDatapackSyncEvent event) ->
+                com.seamlessdeconstructor.logic.DeconstructionResolver.invalidateCache());
         if (FMLEnvironment.dist.isClient()) {
             SeamlessDeconstructorForgeClient.initialize(context);
-        }
-    }
-
-    private static void registerDevelopmentGameTests(FMLJavaModLoadingContext context) {
-        try {
-            Class<?> bootstrap = Class.forName(
-                    "io.github.derkottersberg.seamlessdeconstructor.forge.gametest.SeamlessDeconstructorForgeGameTests");
-            bootstrap.getMethod("register", net.minecraftforge.eventbus.api.bus.BusGroup.class)
-                    .invoke(null, context.getModBusGroup());
-        } catch (ClassNotFoundException ignored) {
-            // Expected in production jars and normal development launches.
-        } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException exception) {
-            throw new IllegalStateException("Could not register Workbench Forge GameTests", exception);
         }
     }
 
@@ -68,10 +57,10 @@ public final class SeamlessDeconstructorForge {
         private final DeferredRegister<MenuType<?>> menus = DeferredRegister.create(Registries.MENU, SeamlessDeconstructorMod.MOD_ID);
 
         ForgePlatformServices(FMLJavaModLoadingContext context) {
-            blocks.register(context.getModBusGroup());
-            items.register(context.getModBusGroup());
-            blockEntities.register(context.getModBusGroup());
-            menus.register(context.getModBusGroup());
+            blocks.register(context.getModEventBus());
+            items.register(context.getModEventBus());
+            blockEntities.register(context.getModEventBus());
+            menus.register(context.getModEventBus());
         }
 
         @Override

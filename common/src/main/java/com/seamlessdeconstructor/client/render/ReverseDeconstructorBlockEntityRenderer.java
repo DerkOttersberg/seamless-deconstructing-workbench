@@ -4,134 +4,66 @@ import com.seamlessdeconstructor.block.ReverseDeconstructorBlock;
 import com.seamlessdeconstructor.block.entity.ReverseDeconstructorBlockEntity;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.math.Axis;
-import net.minecraft.client.renderer.SubmitNodeCollector;
+import net.minecraft.client.renderer.LevelRenderer;
+import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.blockentity.BlockEntityRenderer;
 import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
-import net.minecraft.client.renderer.blockentity.state.BlockEntityRenderState;
-import net.minecraft.client.renderer.feature.ModelFeatureRenderer;
-import net.minecraft.client.renderer.item.ItemModelResolver;
-import net.minecraft.client.renderer.item.ItemStackRenderState;
-import net.minecraft.client.renderer.state.level.CameraRenderState;
+import net.minecraft.client.renderer.entity.ItemRenderer;
 import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.core.Direction;
-import net.minecraft.util.LightCoordsUtil;
 import net.minecraft.world.item.ItemDisplayContext;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.phys.Vec3;
 
-public class ReverseDeconstructorBlockEntityRenderer implements BlockEntityRenderer<ReverseDeconstructorBlockEntity, ReverseDeconstructorBlockEntityRenderer.State> {
-    private static final float[][] OUTPUT_POSITIONS = new float[][]{
-            {-0.16F, -0.12F},
-            {0.0F, -0.12F},
-            {0.16F, -0.12F},
-            {-0.16F, 0.12F},
-            {0.0F, 0.12F},
-            {0.16F, 0.12F}
+public final class ReverseDeconstructorBlockEntityRenderer implements BlockEntityRenderer<ReverseDeconstructorBlockEntity> {
+    private static final float[][] OUTPUT_POSITIONS = {
+        {-0.16F, -0.12F}, {0, -0.12F}, {0.16F, -0.12F},
+        {-0.16F, 0.12F}, {0, 0.12F}, {0.16F, 0.12F}
     };
-
-    private final ItemModelResolver itemModelResolver;
+    private final ItemRenderer itemRenderer;
 
     public ReverseDeconstructorBlockEntityRenderer(BlockEntityRendererProvider.Context context) {
-        this.itemModelResolver = context.itemModelResolver();
+        itemRenderer = context.getItemRenderer();
     }
 
     @Override
-    public State createRenderState() {
-        return new State();
-    }
-
-    @Override
-    public void extractRenderState(ReverseDeconstructorBlockEntity blockEntity, State state, float tickProgress, Vec3 cameraPos, ModelFeatureRenderer.CrumblingOverlay crumblingOverlay) {
-        BlockEntityRenderer.super.extractRenderState(blockEntity, state, tickProgress, cameraPos, crumblingOverlay);
-
+    public void render(ReverseDeconstructorBlockEntity blockEntity, float partialTick,
+            PoseStack poses, MultiBufferSource buffers, int light, int overlay) {
+        if (blockEntity.getLevel() == null) return;
+        int itemLight = LevelRenderer.getLightColor(blockEntity.getLevel(), blockEntity.getBlockPos().above());
         ItemStack input = blockEntity.getRenderInputStack();
-        state.hasInput = !input.isEmpty();
-        if (state.hasInput) {
-            this.itemModelResolver.updateForTopItem(state.inputState, input, ItemDisplayContext.FIXED, blockEntity.getLevel(), null, 0);
-        } else {
-            state.inputState.clear();
+        if (!input.isEmpty()) {
+            poses.pushPose();
+            poses.translate(0.5, 1.0375, 0.5);
+            poses.mulPose(Axis.XP.rotationDegrees(90));
+            poses.scale(0.42F, 0.42F, 0.42F);
+            itemRenderer.renderStatic(input, ItemDisplayContext.FIXED, itemLight,
+                    OverlayTexture.NO_OVERLAY, poses, buffers, blockEntity.getLevel(), 0);
+            poses.popPose();
         }
-
-        state.hasOutput = false;
-        for (int i = 0; i < 6; i++) {
+        Direction facing = blockEntity.getBlockState().getValue(ReverseDeconstructorBlock.FACING);
+        for (int i = 0; i < OUTPUT_POSITIONS.length; i++) {
             ItemStack output = blockEntity.getRenderOutputStack(i);
-            state.hasOutputs[i] = !output.isEmpty();
-            if (state.hasOutputs[i]) {
-                this.itemModelResolver.updateForTopItem(state.outputStates[i], output, ItemDisplayContext.FIXED, blockEntity.getLevel(), null, i + 1);
-                state.hasOutput = true;
-            } else {
-                state.outputStates[i].clear();
-            }
-        }
-
-        state.facing = blockEntity.getBlockState().hasProperty(ReverseDeconstructorBlock.FACING)
-                ? blockEntity.getBlockState().getValue(ReverseDeconstructorBlock.FACING)
-                : Direction.NORTH;
-
-        state.itemLightCoords = blockEntity.getLevel() != null
-                ? LightCoordsUtil.getLightCoords(blockEntity.getLevel(), blockEntity.getBlockPos().above())
-                : state.lightCoords;
-    }
-
-    @Override
-    public void submit(State state, PoseStack matrices, SubmitNodeCollector queue, CameraRenderState cameraState) {
-        if (state.hasInput) {
-            matrices.pushPose();
-            matrices.translate(0.5, 1.0375, 0.5);
-            matrices.rotate(Axis.XP.rotationDegrees(90.0F));
-            matrices.scale(0.42F, 0.42F, 0.42F);
-            state.inputState.submit(matrices, queue, state.itemLightCoords, OverlayTexture.NO_OVERLAY, 0);
-            matrices.popPose();
-        }
-
-        if (state.hasOutput) {
-            for (int i = 0; i < 6; i++) {
-                if (!state.hasOutputs[i]) {
-                    continue;
-                }
-
-                float[] pos = OUTPUT_POSITIONS[i];
-                matrices.pushPose();
-                matrices.translate(0.5, 0.275, 0.5);
-                matrices.rotate(Axis.YP.rotationDegrees(yawForFacing(state.facing)));
-                matrices.translate(pos[0], 0.0, pos[1]);
-                matrices.rotate(Axis.XP.rotationDegrees(90.0F));
-                matrices.scale(0.24F, 0.24F, 0.24F);
-                state.outputStates[i].submit(matrices, queue, state.itemLightCoords, OverlayTexture.NO_OVERLAY, 0);
-                matrices.popPose();
-            }
+            if (output.isEmpty()) continue;
+            poses.pushPose();
+            poses.translate(0.5, 0.275, 0.5);
+            poses.mulPose(Axis.YP.rotationDegrees(yawForFacing(facing)));
+            poses.translate(OUTPUT_POSITIONS[i][0], 0, OUTPUT_POSITIONS[i][1]);
+            poses.mulPose(Axis.XP.rotationDegrees(90));
+            poses.scale(0.24F, 0.24F, 0.24F);
+            itemRenderer.renderStatic(output, ItemDisplayContext.FIXED, itemLight,
+                    OverlayTexture.NO_OVERLAY, poses, buffers, blockEntity.getLevel(), i + 1);
+            poses.popPose();
         }
     }
 
-    @Override
-    public boolean shouldRenderOffScreen() {
-        return true;
-    }
+    @Override public boolean shouldRenderOffScreen(ReverseDeconstructorBlockEntity blockEntity) { return true; }
 
     private static float yawForFacing(Direction direction) {
         return switch (direction) {
-            case NORTH -> 180.0F;
-            case SOUTH -> 0.0F;
-            case WEST -> 90.0F;
-            case EAST -> -90.0F;
-            default -> 0.0F;
+            case NORTH -> 180;
+            case WEST -> 90;
+            case EAST -> -90;
+            default -> 0;
         };
-    }
-
-    public static class State extends BlockEntityRenderState {
-        private final ItemStackRenderState inputState = new ItemStackRenderState();
-        private final ItemStackRenderState[] outputStates = new ItemStackRenderState[]{
-                new ItemStackRenderState(),
-                new ItemStackRenderState(),
-                new ItemStackRenderState(),
-                new ItemStackRenderState(),
-                new ItemStackRenderState(),
-                new ItemStackRenderState()
-        };
-        private final boolean[] hasOutputs = new boolean[6];
-        private Direction facing = Direction.NORTH;
-        private int itemLightCoords;
-        private boolean hasInput;
-        private boolean hasOutput;
     }
 }

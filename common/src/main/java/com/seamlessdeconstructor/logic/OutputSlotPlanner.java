@@ -33,7 +33,7 @@ public final class OutputSlotPlanner {
             for (int slot = outputStart; slot <= outputEnd && !remaining.isEmpty(); slot++) {
                 ItemStack existing = planned.get(slot);
                 if (!existing.isEmpty()
-                        && ItemStack.isSameItemSameComponents(existing, remaining)
+                        && ItemStack.isSameItemSameTags(existing, remaining)
                         && existing.getCount() < existing.getMaxStackSize()) {
                     int inserted = Math.min(existing.getMaxStackSize() - existing.getCount(), remaining.getCount());
                     existing.grow(inserted);

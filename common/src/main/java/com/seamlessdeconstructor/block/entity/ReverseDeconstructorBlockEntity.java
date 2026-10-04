@@ -20,15 +20,13 @@ import java.util.Map;
 import java.util.Optional;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
-import net.minecraft.core.HolderLookup;
 import net.minecraft.core.NonNullList;
-import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.protocol.Packet;
 import net.minecraft.network.protocol.game.ClientGamePacketListener;
 import net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket;
-import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.Container;
 import net.minecraft.world.ContainerHelper;
@@ -41,13 +39,13 @@ import net.minecraft.world.inventory.ContainerData;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
-import net.minecraft.world.item.enchantment.ItemEnchantments;
+import net.minecraft.world.item.enchantment.EnchantmentHelper;
+import net.minecraft.world.item.enchantment.Enchantment;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.world.level.storage.ValueInput;
-import net.minecraft.world.level.storage.ValueOutput;
+import net.minecraft.nbt.CompoundTag;
 
 public class ReverseDeconstructorBlockEntity extends BlockEntity implements ImplementedInventory, MenuProvider, WorldlyContainer {
     public static final int INPUT_SLOT = 0;
@@ -194,7 +192,7 @@ public class ReverseDeconstructorBlockEntity extends BlockEntity implements Impl
             return Optional.empty();
         }
 
-        ItemEnchantments enchantments = input.getOrDefault(DataComponents.ENCHANTMENTS, ItemEnchantments.EMPTY);
+        Map<Enchantment, Integer> enchantments = EnchantmentHelper.getEnchantments(input);
         boolean consumesBook = !enchantments.isEmpty();
         if (consumesBook && !hasPlainBook()) {
             return Optional.empty();
@@ -217,7 +215,7 @@ public class ReverseDeconstructorBlockEntity extends BlockEntity implements Impl
             List<ItemStack> exactOutputs = new ArrayList<>();
             if (consumesBook) {
                 ItemStack enchantedBook = new ItemStack(Items.ENCHANTED_BOOK);
-                enchantedBook.set(DataComponents.STORED_ENCHANTMENTS, enchantments);
+                EnchantmentHelper.setEnchantments(enchantments, enchantedBook);
                 exactOutputs.add(enchantedBook);
             }
             rolledOutput.forEach((item, count) -> {
@@ -239,7 +237,7 @@ public class ReverseDeconstructorBlockEntity extends BlockEntity implements Impl
     private Map<Item, Integer> applyApiModifiers(ItemStack input, Map<Item, Integer> output) {
         Map<String, Integer> byId = new LinkedHashMap<>();
         output.forEach((item, count) -> {
-            Identifier id = BuiltInRegistries.ITEM.getKey(item);
+            ResourceLocation id = BuiltInRegistries.ITEM.getKey(item);
             if (id != null && count != null && count > 0) {
                 byId.merge(id.toString(), count, Integer::sum);
             }
@@ -249,7 +247,7 @@ public class ReverseDeconstructorBlockEntity extends BlockEntity implements Impl
         double durabilityFraction = maxDamage > 0
                 ? (maxDamage - input.getDamageValue()) / (double) maxDamage
                 : 1.0D;
-        Identifier inputId = BuiltInRegistries.ITEM.getKey(input.getItem());
+        ResourceLocation inputId = BuiltInRegistries.ITEM.getKey(input.getItem());
         DeconstructionContext context = new DeconstructionContext(
                 inputId != null ? inputId.toString() : "minecraft:air",
                 input.isDamageableItem(),
@@ -266,12 +264,12 @@ public class ReverseDeconstructorBlockEntity extends BlockEntity implements Impl
                 return;
             }
             try {
-                Identifier identifier = Identifier.parse(id);
+                ResourceLocation identifier = new ResourceLocation(id);
                 if (!BuiltInRegistries.ITEM.containsKey(identifier)) {
                     SeamlessDeconstructorMod.LOGGER.warn("Ignoring unknown item '{}' returned by a deconstruction modifier", id);
                     return;
                 }
-                Item item = BuiltInRegistries.ITEM.getValue(identifier);
+                Item item = BuiltInRegistries.ITEM.get(identifier);
                 if (item != null && item != Items.AIR) {
                     result.merge(item, count, Math::addExact);
                 }
@@ -365,16 +363,15 @@ public class ReverseDeconstructorBlockEntity extends BlockEntity implements Impl
     }
 
     private static boolean hasEnchantments(ItemStack input) {
-        return !input.getOrDefault(DataComponents.ENCHANTMENTS, ItemEnchantments.EMPTY).isEmpty();
+        return !EnchantmentHelper.getEnchantments(input).isEmpty();
     }
 
     public static boolean isPlainBook(ItemStack stack) {
         return !stack.isEmpty()
                 && stack.is(Items.BOOK)
-                && ItemStack.isSameItemSameComponents(stack, new ItemStack(Items.BOOK));
+                && ItemStack.isSameItemSameTags(stack, new ItemStack(Items.BOOK));
     }
 
-    @Override
     public int getMaxStackSize(ItemStack stack) {
         return isPlainBook(stack) ? 1 : Math.min(getMaxStackSize(), stack.getMaxStackSize());
     }
@@ -392,22 +389,21 @@ public class ReverseDeconstructorBlockEntity extends BlockEntity implements Impl
     }
 
     @Override
-    protected void loadAdditional(ValueInput view) {
-        super.loadAdditional(view);
+    public void load(CompoundTag view) {
+        super.load(view);
         for (int i = 0; i < items.size(); i++) {
             items.set(i, ItemStack.EMPTY);
         }
         ContainerHelper.loadAllItems(view, items);
-        progress = Math.max(0, view.getIntOr("Progress", 0));
-        maxProgress = Math.max(1, view.getIntOr("MaxProgress", ModConfig.processTicks()));
+        progress = Math.max(0, view.getInt("Progress"));
+        maxProgress = Math.max(1, view.contains("MaxProgress") ? view.getInt("MaxProgress") : ModConfig.processTicks());
         pendingOperation = PendingDeconstructionOperation.load(view).orElse(null);
-        machineState = view.getIntOr(
-                "MachineState",
-                pendingOperation != null ? MACHINE_BLOCKED : (progress > 0 ? MACHINE_PROCESSING : MACHINE_IDLE));
+        machineState = view.contains("MachineState") ? view.getInt("MachineState")
+                : (pendingOperation != null ? MACHINE_BLOCKED : (progress > 0 ? MACHINE_PROCESSING : MACHINE_IDLE));
         if (machineState < MACHINE_IDLE || machineState > MACHINE_BLOCKED) {
             machineState = MACHINE_IDLE;
         }
-        blockReason = view.getIntOr("BlockReason", BLOCK_REASON_NONE);
+        blockReason = view.getInt("BlockReason");
         if (blockReason < BLOCK_REASON_NONE || blockReason > BLOCK_REASON_OUTPUT_FULL) {
             blockReason = BLOCK_REASON_NONE;
         }
@@ -418,7 +414,7 @@ public class ReverseDeconstructorBlockEntity extends BlockEntity implements Impl
     }
 
     @Override
-    protected void saveAdditional(ValueOutput view) {
+    protected void saveAdditional(CompoundTag view) {
         super.saveAdditional(view);
         ContainerHelper.saveAllItems(view, items);
         view.putInt("Progress", progress);
@@ -428,7 +424,7 @@ public class ReverseDeconstructorBlockEntity extends BlockEntity implements Impl
         if (pendingOperation != null) {
             pendingOperation.save(view);
         } else {
-            view.discard(PendingDeconstructionOperation.STORAGE_KEY);
+            view.remove(PendingDeconstructionOperation.STORAGE_KEY);
         }
     }
 
@@ -453,8 +449,8 @@ public class ReverseDeconstructorBlockEntity extends BlockEntity implements Impl
     }
 
     @Override
-    public net.minecraft.nbt.CompoundTag getUpdateTag(HolderLookup.Provider registries) {
-        return saveWithoutMetadata(registries);
+    public net.minecraft.nbt.CompoundTag getUpdateTag() {
+        return saveWithoutMetadata();
     }
 
     public ItemStack getRenderInputStack() {
@@ -582,6 +578,7 @@ public class ReverseDeconstructorBlockEntity extends BlockEntity implements Impl
 
     @Override
     public boolean stillValid(Player player) {
-        return Container.stillValidBlockEntity(this, player);
+        return level != null && level.getBlockEntity(worldPosition) == this
+                && player.distanceToSqr(worldPosition.getX() + 0.5, worldPosition.getY() + 0.5, worldPosition.getZ() + 0.5) <= 64.0;
     }
 }

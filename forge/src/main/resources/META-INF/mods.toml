@@ -20,7 +20,7 @@ ordering="NONE"
 side="BOTH"
 
 [features.seamlessdeconstructor]
-javaVersion="[25,)"
+javaVersion="[17,)"
 
 [[dependencies.seamlessdeconstructor]]
 modId="minecraft"

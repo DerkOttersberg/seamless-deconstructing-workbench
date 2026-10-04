@@ -2,11 +2,15 @@ name: build
 
 on:
   push:
-    branches: [main, '26.2', '26.3', 'port/**', 'support/**', 'feat/**', 'fix/**', 'release/**']
+    branches: ['1.20.1', 'feat/**', 'fix/**']
   pull_request:
 
 permissions:
   contents: read
+
+defaults:
+  run:
+    working-directory: seamless-deconstructing-workbench
 
 jobs:
   wrapper-validation:
@@ -14,98 +18,79 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          path: suite/seamless-deconstructing-workbench
+          path: seamless-deconstructing-workbench
+      - uses: actions/checkout@v4
+        with:
+          repository: DerkOttersberg/seamless-api
+          ref: '1432bd166e8a25700233ae8509fc9f093232b590'
+          path: seamless-api
       - uses: gradle/actions/wrapper-validation@v4
 
   loader-builds:
-    name: loader-builds (${{ matrix.lane }})
     strategy:
       fail-fast: false
       matrix:
-        include:
-          - lane: fabric
-            loader: fabric
-            gradle_args: -PfabricApiVersion=0.161.0+26.3
-          - lane: forge
-            loader: forge
-            gradle_args: ''
-          - lane: neoforge
-            loader: neoforge
-            gradle_args: ''
+        loader: [fabric, forge]
     runs-on: ubuntu-24.04
-    defaults:
-      run:
-        working-directory: suite/seamless-deconstructing-workbench
     steps:
       - uses: actions/checkout@v4
         with:
-          path: suite/seamless-deconstructing-workbench
+          path: seamless-deconstructing-workbench
       - uses: actions/checkout@v4
         with:
           repository: DerkOttersberg/seamless-api
-          ref: aa8e793995b0deaa85f5283e3056eb702bc8611a
-          path: suite/seamless-api
+          ref: '1432bd166e8a25700233ae8509fc9f093232b590'
+          path: seamless-api
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: '25'
       - uses: gradle/actions/setup-gradle@v4
-      - run: ./gradlew :common:check :${{ matrix.loader }}:check :${{ matrix.loader }}:build ${{ matrix.gradle_args }}
-      - name: Upload ${{ matrix.lane }} reports and logs
+      - run: ./gradlew --no-daemon :common:check :${{ matrix.loader }}:check :${{ matrix.loader }}:build
+      - uses: actions/upload-artifact@v4
         if: always()
-        uses: actions/upload-artifact@v4
         with:
-          name: seamless-deconstructing-workbench-${{ matrix.lane }}-reports
+          name: seamless-deconstructing-workbench-${{ matrix.loader }}-reports
           if-no-files-found: ignore
           path: |
-            suite/seamless-deconstructing-workbench/**/build/reports/**
-            suite/seamless-deconstructing-workbench/**/build/test-results/**
-            suite/seamless-deconstructing-workbench/**/build/run/**/logs/**
-            suite/seamless-deconstructing-workbench/**/build/**/crash-reports/**
-            suite/seamless-deconstructing-workbench/**/run/**/crash-reports/**
-            suite/seamless-deconstructing-workbench/**/build/gametest/logs/**
+            seamless-deconstructing-workbench/**/build/reports/**
+            seamless-deconstructing-workbench/**/build/test-results/**
+            seamless-deconstructing-workbench/**/logs/**
+            seamless-deconstructing-workbench/**/crash-reports/**
 
   verification:
     needs: [wrapper-validation, loader-builds]
-    if: ${{ always() }}
     runs-on: ubuntu-24.04
-    defaults:
-      run:
-        working-directory: suite/seamless-deconstructing-workbench
     steps:
-      - name: Require successful protected prerequisite jobs
-        env:
-          WRAPPER_VALIDATION_RESULT: ${{ needs.wrapper-validation.result }}
-          LOADER_BUILDS_RESULT: ${{ needs.loader-builds.result }}
-        run: |
-          if [[ "$WRAPPER_VALIDATION_RESULT" != "success" || "$LOADER_BUILDS_RESULT" != "success" ]]; then
-            echo "Required jobs failed: wrapper-validation=$WRAPPER_VALIDATION_RESULT loader-builds=$LOADER_BUILDS_RESULT"
-            exit 1
-          fi
       - uses: actions/checkout@v4
         with:
-          path: suite/seamless-deconstructing-workbench
+          path: seamless-deconstructing-workbench
       - uses: actions/checkout@v4
         with:
           repository: DerkOttersberg/seamless-api
-          ref: aa8e793995b0deaa85f5283e3056eb702bc8611a
-          path: suite/seamless-api
+          ref: '1432bd166e8a25700233ae8509fc9f093232b590'
+          path: seamless-api
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: '25'
       - uses: gradle/actions/setup-gradle@v4
-      - run: ./gradlew clean check build
-      - name: Upload verification reports and logs
+      - run: ./gradlew --no-daemon clean check build
+      - uses: actions/upload-artifact@v4
         if: always()
-        uses: actions/upload-artifact@v4
         with:
-          name: seamless-deconstructing-workbench-verification-reports
+          name: seamless-deconstructing-workbench-verification
           if-no-files-found: ignore
           path: |
-            suite/seamless-deconstructing-workbench/**/build/reports/**
-            suite/seamless-deconstructing-workbench/**/build/test-results/**
-            suite/seamless-deconstructing-workbench/**/build/run/**/logs/**
-            suite/seamless-deconstructing-workbench/**/build/**/crash-reports/**
-            suite/seamless-deconstructing-workbench/**/run/**/crash-reports/**
-            suite/seamless-deconstructing-workbench/**/build/gametest/logs/**
+            seamless-deconstructing-workbench/**/build/reports/**
+            seamless-deconstructing-workbench/**/build/test-results/**
+            seamless-deconstructing-workbench/fabric/build/libs/*
+            seamless-deconstructing-workbench/forge/build/libs/*

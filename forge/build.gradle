@@ -1,4 +1,4 @@
-plugins { id 'dev.architectury.loom-no-remap' }
+plugins { id 'dev.architectury.loom' }
 base { archivesName = rootProject.archives_base_name }
 
 // Forge 26.3 places ordinary classpath jars in its cleaned bootstrap layer.
@@ -18,6 +18,8 @@ sourceSets {
     }
 }
 
+apply from: rootProject.file('gradle/empty-gametest-structure.gradle')
+
 configurations {
     gametestImplementation.extendsFrom implementation
     gametestRuntimeOnly.extendsFrom runtimeOnly
@@ -25,19 +27,16 @@ configurations {
 
 // All 26.3 classes already use official names. Legacy remapping services
 // create a second bootstrap-layer copy of event-bus parameter types.
-configurations.forgeRuntimeLibrary {
-    exclude group: 'dev.architectury', module: 'architectury-naming-service'
-    exclude group: 'dev.architectury', module: 'architectury-mixin-remapper-service'
-}
+
 
 dependencies {
     minecraft libs.minecraft
+    mappings loom.officialMojangMappings()
     forge libs.forge
-    def seamlessApiForge = files(rootProject.file("../seamless-api/forge/build/libs/seamless-api-${libs.versions.seamless.api.get()}-forge.jar"))
+    def seamlessApiForge = files(rootProject.file("../seamless-api/forge/build/devlibs/seamless-api-${libs.versions.seamless.api.get()}-forge-dev.jar"))
     seamlessApiForge.builtBy gradle.includedBuild('seamless-api').task(':forge:jar')
     implementation seamlessApiForge
 }
-def gameTestMappings = file('identity-mappings.tiny')
 def gameTestModRoot = layout.buildDirectory.dir('gametest-mod')
 loom {
     mods {
@@ -54,12 +53,6 @@ loom {
             environmentVariable 'MOD_CLASSES', "seamlessdeconstructor%%${gameTestModRoot.get().asFile.absolutePath}"
             runDir 'build/gametest'
             property 'forge.enabledGameTestNamespaces', 'seamlessdeconstructor'
-            // Forge 65's Loom launch template omits these properties. The
-            // 26.3 release is unobfuscated, so an identity map is sufficient.
-            property 'architectury.naming.mappingsPath', gameTestMappings.absolutePath
-            property 'architectury.naming.sourceNamespace', 'official'
-            property 'architectury.mixinRemapper.mappingsPath', gameTestMappings.absolutePath
-            property 'architectury.mixinRemapper.sourceNamespace', 'official'
         }
     }
 }
@@ -81,21 +74,20 @@ tasks.named('runGameTestServer') {
     // environment values during execution. Exclude the old source roots here too.
     def sourceRoots = (sourceSets.main.output.files + sourceSets.gametest.output.files) as Set
     classpath = files(gameTestModRoot) + classpath.filter { !sourceRoots.contains(it) }
-    inputs.file(gameTestMappings)
     doLast {
         def latestLog = file('build/gametest/logs/latest.log')
         if (!latestLog.isFile()) {
             throw new GradleException("Forge GameTest run produced no latest.log")
         }
         def matcher = latestLog.getText('UTF-8') =~ /All (\d+) required tests passed/
-        if (!matcher.find() || matcher.group(1).toInteger() < 9) {
+        if (!matcher.find() || matcher.group(1).toInteger() != 8) {
             throw new GradleException(
-                    "Forge GameTest discovery guard expected eight Workbench tests plus the built-in test")
+                    "Forge GameTest discovery guard expected eight Workbench tests")
         }
     }
 }
 tasks.named('check') { dependsOn tasks.named('runGameTestServer') }
-def metadataProperties = [mod_version: project.version.toString(), loader_version_range: '[66,)', forge_version_range: '[66.0.9,67)', minecraft_version_range: '[26.3,26.4)']
+def metadataProperties = [mod_version: project.version.toString(), loader_version_range: '[47,)', forge_version_range: '[47.1,48)', minecraft_version_range: '[1.20.1,1.20.2)']
 processResources {
     inputs.properties metadataProperties
     filesMatching('META-INF/mods.toml') { expand metadataProperties }
@@ -104,9 +96,12 @@ tasks.named('jar', Jar) {
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
     exclude 'META-INF/MANIFEST.MF'
     manifest { attributes 'Automatic-Module-Name': 'io.github.derkottersberg.seamlessdeconstructor' }
-    archiveFileName = "${rootProject.archives_base_name}-${project.version}-forge.jar"
+    archiveFileName = "${rootProject.archives_base_name}-${project.version}-forge-dev.jar"
 }
 tasks.named('sourcesJar', Jar) {
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
     archiveFileName = "${rootProject.archives_base_name}-${project.version}-forge-sources.jar"
 }
+tasks.named('remapJar') { archiveFileName = "${rootProject.archives_base_name}-${project.version}-forge.jar" }
+
+tasks.named('remapSourcesJar') { archiveFileName = "${rootProject.archives_base_name}-${project.version}-forge-sources.jar" }

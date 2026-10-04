@@ -8,7 +8,6 @@ import net.minecraft.client.gui.screens.MenuScreens;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
 import net.minecraft.client.renderer.blockentity.BlockEntityRenderers;
-import net.minecraft.client.renderer.blockentity.state.BlockEntityRenderState;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.MenuType;
 import net.minecraft.world.level.block.entity.BlockEntity;
@@ -29,9 +28,9 @@ public final class SeamlessDeconstructorFabricClient implements ClientModInitial
         }
 
         @Override
-        public <T extends BlockEntity, S extends BlockEntityRenderState> void registerBlockEntityRenderer(
+        public <T extends BlockEntity> void registerBlockEntityRenderer(
                 Supplier<BlockEntityType<T>> type,
-                BlockEntityRendererProvider<T, S> provider) {
+                BlockEntityRendererProvider<T> provider) {
             BlockEntityRenderers.register(type.get(), provider);
         }
     }

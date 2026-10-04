@@ -1,6 +1,6 @@
 package com.seamlessdeconstructor.logic;
 
-import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceLocation;
 
 /** Stable recipe-choice policy used when multiple recipes produce one item. */
 public final class DeconstructionPlanSelector {
@@ -8,9 +8,9 @@ public final class DeconstructionPlanSelector {
     }
 
     public static boolean shouldReplace(
-            Identifier existingId,
+            ResourceLocation existingId,
             double existingUnits,
-            Identifier candidateId,
+            ResourceLocation candidateId,
             double candidateUnits) {
         boolean existingVanilla = "minecraft".equals(existingId.getNamespace());
         boolean candidateVanilla = "minecraft".equals(candidateId.getNamespace());

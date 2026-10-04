@@ -6,7 +6,7 @@ import com.seamlessdeconstructor.registry.ModBlocks;
 import com.seamlessdeconstructor.screen.ModScreenHandlers;
 import io.github.derkottersberg.seamlessdeconstructor.internal.PlatformServices;
 import java.util.Objects;
-import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceLocation;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -33,7 +33,7 @@ public final class SeamlessDeconstructorMod {
         LOGGER.info("Seamless Deconstructing Workbench initialized on {}", services.loaderName());
     }
 
-    public static Identifier id(String path) {
-        return Identifier.fromNamespaceAndPath(MOD_ID, path);
+    public static ResourceLocation id(String path) {
+        return new ResourceLocation(MOD_ID, path);
     }
 }

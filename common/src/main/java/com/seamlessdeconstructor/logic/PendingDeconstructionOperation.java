@@ -4,8 +4,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.level.storage.ValueInput;
-import net.minecraft.world.level.storage.ValueOutput;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.ListTag;
+import net.minecraft.nbt.Tag;
 
 /**
  * The exact, already-randomized result of one operation. Keeping this object until it can be
@@ -34,7 +35,7 @@ public final class PendingDeconstructionOperation {
     }
 
     public boolean matchesInput(ItemStack stack) {
-        return !stack.isEmpty() && ItemStack.isSameItemSameComponents(inputIdentity, stack);
+        return !stack.isEmpty() && ItemStack.isSameItemSameTags(inputIdentity, stack);
     }
 
     public ItemStack inputIdentity() {
@@ -49,34 +50,28 @@ public final class PendingDeconstructionOperation {
         return outputs.stream().map(ItemStack::copy).toList();
     }
 
-    public void save(ValueOutput root) {
-        ValueOutput output = root.child(STORAGE_KEY);
-        output.store(INPUT_KEY, ItemStack.CODEC, inputIdentity);
+    public void save(CompoundTag root) {
+        CompoundTag output = new CompoundTag();
+        output.put(INPUT_KEY, inputIdentity.save(new CompoundTag()));
         output.putBoolean(CONSUMES_BOOK_KEY, consumesBook);
-        ValueOutput.TypedOutputList<ItemStack> storedOutputs = output.list(OUTPUTS_KEY, ItemStack.CODEC);
-        outputs.forEach(storedOutputs::add);
+        ListTag storedOutputs = new ListTag();
+        outputs.forEach(stack -> storedOutputs.add(stack.save(new CompoundTag())));
+        output.put(OUTPUTS_KEY, storedOutputs);
+        root.put(STORAGE_KEY, output);
     }
 
-    public static Optional<PendingDeconstructionOperation> load(ValueInput root) {
-        Optional<ValueInput> stored = root.child(STORAGE_KEY);
-        if (stored.isEmpty()) {
-            return Optional.empty();
-        }
-
-        Optional<ItemStack> input = stored.get().read(INPUT_KEY, ItemStack.CODEC).filter(stack -> !stack.isEmpty());
-        if (input.isEmpty()) {
-            return Optional.empty();
-        }
-
+    public static Optional<PendingDeconstructionOperation> load(CompoundTag root) {
+        if (!root.contains(STORAGE_KEY, Tag.TAG_COMPOUND)) return Optional.empty();
+        CompoundTag stored = root.getCompound(STORAGE_KEY);
+        ItemStack input = ItemStack.of(stored.getCompound(INPUT_KEY));
+        if (input.isEmpty()) return Optional.empty();
         List<ItemStack> outputs = new ArrayList<>();
-        for (ItemStack stack : stored.get().listOrEmpty(OUTPUTS_KEY, ItemStack.CODEC)) {
-            if (!stack.isEmpty()) {
-                outputs.addAll(OutputSlotPlanner.splitToMaxStackSize(stack));
-            }
+        ListTag storedOutputs = stored.getList(OUTPUTS_KEY, Tag.TAG_COMPOUND);
+        for (int i = 0; i < storedOutputs.size(); i++) {
+            ItemStack stack = ItemStack.of(storedOutputs.getCompound(i));
+            if (!stack.isEmpty()) outputs.addAll(OutputSlotPlanner.splitToMaxStackSize(stack));
         }
-        return Optional.of(new PendingDeconstructionOperation(
-                input.get(),
-                stored.get().getBooleanOr(CONSUMES_BOOK_KEY, false),
-                outputs));
+        return Optional.of(new PendingDeconstructionOperation(input,
+                stored.getBoolean(CONSUMES_BOOK_KEY), outputs));
     }
 }

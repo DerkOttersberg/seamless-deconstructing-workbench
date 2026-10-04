@@ -1,0 +1,24 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [
+    "BBB",
+    "P P",
+    "CCC"
+  ],
+  "key": {
+    "B": {
+      "item": "minecraft:bricks"
+    },
+    "P": {
+      "tag": "minecraft:planks"
+    },
+    "C": {
+      "item": "minecraft:cobblestone"
+    }
+  },
+  "result": {
+    "count": 1,
+    "item": "seamlessdeconstructor:reverse_deconstructor"
+  }
+}

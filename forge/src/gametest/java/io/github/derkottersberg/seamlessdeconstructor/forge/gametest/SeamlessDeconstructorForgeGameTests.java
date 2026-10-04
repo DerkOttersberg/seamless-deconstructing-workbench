@@ -9,7 +9,6 @@ import java.util.function.Supplier;
 import java.util.Map;
 import java.util.LinkedHashMap;
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.Direction;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.gametest.framework.GameTestHelper;
@@ -17,63 +16,56 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
-import net.minecraftforge.eventbus.api.bus.BusGroup;
-import net.minecraftforge.gametest.GameTestNamespace;
-import net.minecraftforge.gametest.GameTestDontPrefix;
+import net.minecraft.gametest.framework.GameTest;
+import net.minecraftforge.gametest.GameTestHolder;
+import net.minecraftforge.gametest.PrefixGameTestTemplate;
 import net.minecraftforge.items.IItemHandler;
 import net.minecraftforge.registries.RegisterEvent;
 
-@GameTestNamespace("seamlessdeconstructor")
-@GameTestDontPrefix
+@GameTestHolder("seamlessdeconstructor")
+@PrefixGameTestTemplate(false)
 public final class SeamlessDeconstructorForgeGameTests {
-    // Vanilla test registries do not exist during early mod construction in 26.3.
-    // Keep only factories here and resolve/register them at the registry event.
-    private static final Map<String, Supplier<Consumer<GameTestHelper>>> TEST_FUNCTIONS = new LinkedHashMap<>();
-
-    static {
-        TEST_FUNCTIONS.put(
-                "processes_crafting_table",
-                () -> WorkbenchGameTestScenario::processesCraftingTableIntoIngredients);
-        TEST_FUNCTIONS.put(
-                "enchantment_book_atomicity",
-                () -> WorkbenchGameTestScenario::transfersEnchantmentsAndConsumesBookAtomically);
-        TEST_FUNCTIONS.put(
-                "damaged_input",
-                () -> WorkbenchGameTestScenario::damagedInputUsesDurabilityAdjustedSalvage);
-        TEST_FUNCTIONS.put(
-                "modified_book_rejected",
-                () -> WorkbenchGameTestScenario::rejectsModifiedBooksAsEnchantmentCarriers);
-        TEST_FUNCTIONS.put(
-                "pending_save_reload",
-                () -> WorkbenchGameTestScenario::blockedOperationSurvivesSaveReloadAndCommitsWithoutOverflow);
-        TEST_FUNCTIONS.put(
-                "sided_automation",
-                () -> WorkbenchGameTestScenario::exposesStableSidedAutomationRules);
-        TEST_FUNCTIONS.put(
-                "automation_capability",
-                () -> SeamlessDeconstructorForgeGameTests::exposesRegisteredItemHandlers);
-        TEST_FUNCTIONS.put(
-                "screen_shift_click",
-                () -> WorkbenchGameTestScenario::shiftClickRoutesBooksInputsAndOutputs);
+    @GameTest(template = "empty", timeoutTicks = 700)
+    public static void processesCraftingTableIntoIngredients(GameTestHelper helper) {
+        WorkbenchGameTestScenario.processesCraftingTableIntoIngredients(helper);
     }
 
-    private SeamlessDeconstructorForgeGameTests() {
+    @GameTest(template = "empty", timeoutTicks = 700)
+    public static void transfersEnchantmentsAndConsumesBookAtomically(GameTestHelper helper) {
+        WorkbenchGameTestScenario.transfersEnchantmentsAndConsumesBookAtomically(helper);
     }
 
-    public static void register(BusGroup modBusGroup) {
-        RegisterEvent.getBus(modBusGroup).addListener(event -> {
-            if (event.getRegistryKey() == Registries.TEST_FUNCTION) {
-                TEST_FUNCTIONS.forEach((path, factory) ->
-                    event.register(Registries.TEST_FUNCTION, SeamlessDeconstructorMod.id(path), factory));
-            }
-        });
+    @GameTest(template = "empty", timeoutTicks = 700)
+    public static void damagedInputUsesDurabilityAdjustedSalvage(GameTestHelper helper) {
+        WorkbenchGameTestScenario.damagedInputUsesDurabilityAdjustedSalvage(helper);
     }
 
-    private static void exposesRegisteredItemHandlers(GameTestHelper helper) {
+    @GameTest(template = "empty", timeoutTicks = 700)
+    public static void rejectsModifiedBooksAsEnchantmentCarriers(GameTestHelper helper) {
+        WorkbenchGameTestScenario.rejectsModifiedBooksAsEnchantmentCarriers(helper);
+    }
+
+    @GameTest(template = "empty", timeoutTicks = 700)
+    public static void blockedOperationSurvivesSaveReloadAndCommitsWithoutOverflow(GameTestHelper helper) {
+        WorkbenchGameTestScenario.blockedOperationSurvivesSaveReloadAndCommitsWithoutOverflow(helper);
+    }
+
+    @GameTest(template = "empty", timeoutTicks = 700)
+    public static void exposesStableSidedAutomationRules(GameTestHelper helper) {
+        WorkbenchGameTestScenario.exposesStableSidedAutomationRules(helper);
+    }
+
+    @GameTest(template = "empty", timeoutTicks = 700)
+    public static void shiftClickRoutesBooksInputsAndOutputs(GameTestHelper helper) {
+        WorkbenchGameTestScenario.shiftClickRoutesBooksInputsAndOutputs(helper);
+    }
+
+    @GameTest(template = "empty", timeoutTicks = 100)
+    public static void exposesRegisteredItemHandlers(GameTestHelper helper) {
         BlockPos relativePos = new BlockPos(1, 1, 1);
         helper.setBlock(relativePos, ModBlocks.REVERSE_DECONSTRUCTOR.get().defaultBlockState());
         ReverseDeconstructorBlockEntity blockEntity =
-                helper.getBlockEntity(relativePos, ReverseDeconstructorBlockEntity.class);
+                (ReverseDeconstructorBlockEntity) helper.getBlockEntity(relativePos);
 
         IItemHandler unsided = blockEntity.getCapability(ForgeCapabilities.ITEM_HANDLER).resolve().orElse(null);
         IItemHandler top = blockEntity.getCapability(ForgeCapabilities.ITEM_HANDLER, Direction.UP).resolve().orElse(null);
@@ -82,30 +74,24 @@ public final class SeamlessDeconstructorForgeGameTests {
         helper.assertTrue(unsided != null, "Forge unsided item handler was not exposed");
         helper.assertTrue(top != null, "Forge input-side item handler was not exposed");
         helper.assertTrue(bottom != null, "Forge output-side item handler was not exposed");
-        helper.assertValueEqual(unsided.getSlots(), 8, "Forge unsided handler slot count changed");
-        helper.assertValueEqual(top.getSlots(), 2, "Forge input-side handler slot count changed");
-        helper.assertValueEqual(bottom.getSlots(), 6, "Forge output-side handler slot count changed");
+        helper.assertTrue(java.util.Objects.equals(unsided.getSlots(), 8), "Forge unsided handler slot count changed");
+        helper.assertTrue(java.util.Objects.equals(top.getSlots(), 2), "Forge input-side handler slot count changed");
+        helper.assertTrue(java.util.Objects.equals(bottom.getSlots(), 6), "Forge output-side handler slot count changed");
 
         ItemStack modifiedBook = new ItemStack(Items.BOOK);
-        modifiedBook.set(DataComponents.CUSTOM_NAME, Component.literal("Modified"));
+        modifiedBook.setHoverName(Component.literal("Modified"));
         ItemStack rejected = top.insertItem(1, modifiedBook, false);
-        helper.assertValueEqual(rejected.getCount(), 1, "Forge item handler accepted a modified book");
+        helper.assertTrue(java.util.Objects.equals(rejected.getCount(), 1), "Forge item handler accepted a modified book");
         helper.assertTrue(
                 top.insertItem(0, new ItemStack(Items.CRAFTING_TABLE), false).isEmpty(),
                 "Forge item handler did not accept a non-book input");
         ItemStack remainder = top.insertItem(1, new ItemStack(Items.BOOK, 5), false);
-        helper.assertValueEqual(remainder.getCount(), 4, "Forge item handler did not enforce one-book capacity");
-        helper.assertValueEqual(
-                blockEntity.getItem(ReverseDeconstructorBlockEntity.BOOK_SLOT).getCount(),
-                1,
-                "Forge item handler inserted the wrong number of books");
+        helper.assertTrue(java.util.Objects.equals(remainder.getCount(), 4), "Forge item handler did not enforce one-book capacity");
+        helper.assertTrue(java.util.Objects.equals(blockEntity.getItem(ReverseDeconstructorBlockEntity.BOOK_SLOT).getCount(), 1), "Forge item handler inserted the wrong number of books");
         blockEntity.setItem(
                 ReverseDeconstructorBlockEntity.OUTPUT_START,
                 new ItemStack(Items.OAK_PLANKS, 2));
-        helper.assertValueEqual(
-                bottom.insertItem(0, new ItemStack(Items.STONE), false).getCount(),
-                1,
-                "Forge output face accepted item insertion");
+        helper.assertTrue(java.util.Objects.equals(bottom.insertItem(0, new ItemStack(Items.STONE), false).getCount(), 1), "Forge output face accepted item insertion");
         helper.assertTrue(top.extractItem(0, 1, false).isEmpty(), "Forge input face allowed input extraction");
         helper.assertTrue(unsided.extractItem(0, 1, false).isEmpty(), "Forge unsided access allowed input extraction");
         helper.assertTrue(unsided.extractItem(1, 1, false).isEmpty(), "Forge unsided access allowed book extraction");

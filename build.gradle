@@ -34,6 +34,7 @@ subprojects {
         options.release = libs.versions.java.get().toInteger()
     }
 
+    tasks.withType(JavaExec).configureEach { javaLauncher = javaToolchains.launcherFor { languageVersion = JavaLanguageVersion.of(libs.versions.java.get().toInteger()) } }
     tasks.withType(Test).configureEach { useJUnitPlatform() }
 
     publishing {
@@ -62,25 +63,31 @@ tasks.register('verifyCommonIsolation') {
     }
 }
 
-def loaderJarFiles = ['fabric', 'forge', 'neoforge'].collectEntries { loader ->
-    [(loader): project(":${loader}").tasks.named('jar', Jar).flatMap { it.archiveFile }]
+def loaderJarFiles = ['fabric', 'forge'].collectEntries { loader ->
+    [(loader): providers.provider { project(":${loader}").tasks.named('remapJar').get().archiveFile.get() }]
 }
 
 tasks.register('verifyLoaderJars') {
     group = 'verification'
-    dependsOn ':fabric:jar', ':forge:jar', ':neoforge:jar'
+    dependsOn ':fabric:remapJar', ':forge:remapJar'
     inputs.files(loaderJarFiles.values())
     doLast {
         def specifications = [
             fabric: [expected: 'fabric.mod.json', forbidden: ['META-INF/mods.toml', 'META-INF/neoforge.mods.toml']],
-            forge: [expected: 'META-INF/mods.toml', forbidden: ['fabric.mod.json', 'META-INF/neoforge.mods.toml']],
-            neoforge: [expected: 'META-INF/neoforge.mods.toml', forbidden: ['fabric.mod.json', 'META-INF/mods.toml']]
+            forge: [expected: 'META-INF/mods.toml', forbidden: ['fabric.mod.json', 'META-INF/neoforge.mods.toml']]
         ]
         specifications.each { loader, specification ->
             def archive = loaderJarFiles[loader].get().asFile
             def expectedName = "${rootProject.archives_base_name}-${project.version}-${loader}.jar"
             if (archive.name != expectedName) throw new GradleException("Expected ${expectedName}, found ${archive.name}")
             new java.util.zip.ZipFile(archive).withCloseable { zip ->
+                zip.entries().findAll { it.name.endsWith('.class') }.each { entry ->
+                    new DataInputStream(zip.getInputStream(entry)).withCloseable { header ->
+                        if (header.readInt() != -889275714) throw new GradleException("Invalid class: ${entry.name}")
+                        header.readUnsignedShort()
+                        if (header.readUnsignedShort() > 61) throw new GradleException("Not Java 17 compatible: ${entry.name}")
+                    }
+                }
                 if (zip.getEntry(specification.expected) == null) throw new GradleException("${archive.name} is missing ${specification.expected}")
                 specification.forbidden.each { entry ->
                     if (zip.getEntry(entry) != null) throw new GradleException("${archive.name} contains stale metadata ${entry}")
@@ -96,20 +103,20 @@ tasks.register('verifyLoaderJars') {
                     if (metadata.depends.fabricloader != '>=0.19.5') throw new GradleException("Unexpected Fabric Loader range ${metadata.depends.fabricloader}")
                     if (metadata.depends['fabric-api'] != libs.versions.fabric.api.range.get()) throw new GradleException("Unexpected Fabric API range ${metadata.depends['fabric-api']}")
                     if (metadata.depends.values().any { it == '*' }) throw new GradleException('Fabric dependency wildcards are forbidden')
-                    if (metadata.depends.minecraft != '~26.3' || metadata.depends.java != '>=25') throw new GradleException('Unexpected Minecraft/Java range')
+                    if (metadata.depends.minecraft != '1.20.1' || metadata.depends.java != '>=17') throw new GradleException('Unexpected Minecraft/Java range')
                     if (metadata.depends.seamlessapi != '>=2.0.0 <3.0.0') throw new GradleException("Unexpected Seamless API range ${metadata.depends.seamlessapi}")
                 } else {
                     def metadata = zip.getInputStream(zip.getEntry(specification.expected)).getText('UTF-8')
                     if (metadata.contains('${')) throw new GradleException("${archive.name} contains unprocessed metadata placeholders")
                     def requiredValues = loader == 'forge'
-                            ? ['modLoader="javafml"', 'loaderVersion="[66,)"', 'license="MIT"',
-                               "version=\"${project.version}\"", 'modId="forge"', 'versionRange="[66.0.9,67)"',
-                               'modId="minecraft"', 'versionRange="[26.3,26.4)"',
-                               'modId="seamlessapi"', 'versionRange="[2.0.0,3.0.0)"', 'javaVersion="[25,)"']
+                            ? ['modLoader="javafml"', 'loaderVersion="[47,)"', 'license="MIT"',
+                               "version=\"${project.version}\"", 'modId="forge"', 'versionRange="[47.1,48)"',
+                               'modId="minecraft"', 'versionRange="[1.20.1,1.20.2)"',
+                               'modId="seamlessapi"', 'versionRange="[2.0.0,3.0.0)"', 'javaVersion="[17,)"']
                             : ['license="MIT"', "version=\"${project.version}\"",
                                'modId="neoforge"', 'versionRange="[26.3.0.48-beta,26.4)"',
-                               'modId="minecraft"', 'versionRange="[26.3,26.4)"',
-                               'modId="seamlessapi"', 'versionRange="[2.0.0,3.0.0)"', 'javaVersion="[25,)"']
+                               'modId="minecraft"', 'versionRange="[1.20.1,1.20.2)"',
+                               'modId="seamlessapi"', 'versionRange="[2.0.0,3.0.0)"', 'javaVersion="[17,)"']
                     requiredValues.each { value ->
                         if (!metadata.contains(value)) throw new GradleException("${archive.name} is missing processed metadata: ${value}")
                     }

@@ -3,35 +3,35 @@ package com.seamlessdeconstructor.logic;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceLocation;
 import org.junit.jupiter.api.Test;
 
 class DeconstructionPlanSelectorTest {
     @Test
     void vanillaRecipeWinsOverModdedRecipe() {
         assertTrue(DeconstructionPlanSelector.shouldReplace(
-                Identifier.parse("example:table"),
+                new ResourceLocation("example:table"),
                 20.0D,
-                Identifier.parse("minecraft:table"),
+                new ResourceLocation("minecraft:table"),
                 2.0D));
         assertFalse(DeconstructionPlanSelector.shouldReplace(
-                Identifier.parse("minecraft:table"),
+                new ResourceLocation("minecraft:table"),
                 2.0D,
-                Identifier.parse("example:table"),
+                new ResourceLocation("example:table"),
                 20.0D));
     }
 
     @Test
     void sameNamespaceClassPrefersMoreIngredientUnits() {
         assertTrue(DeconstructionPlanSelector.shouldReplace(
-                Identifier.parse("minecraft:cheap"),
+                new ResourceLocation("minecraft:cheap"),
                 2.0D,
-                Identifier.parse("minecraft:expensive"),
+                new ResourceLocation("minecraft:expensive"),
                 3.0D));
         assertFalse(DeconstructionPlanSelector.shouldReplace(
-                Identifier.parse("minecraft:expensive"),
+                new ResourceLocation("minecraft:expensive"),
                 3.0D,
-                Identifier.parse("minecraft:cheap"),
+                new ResourceLocation("minecraft:cheap"),
                 2.0D));
     }
 }

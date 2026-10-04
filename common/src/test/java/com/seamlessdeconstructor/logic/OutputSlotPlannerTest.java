@@ -8,19 +8,13 @@ import java.util.List;
 import net.minecraft.SharedConstants;
 import net.minecraft.core.NonNullList;
 import net.minecraft.core.RegistryAccess;
-import net.minecraft.core.component.DataComponentMap;
-import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.Bootstrap;
-import net.minecraft.util.ProblemReporter;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
-import net.minecraft.world.level.storage.TagValueInput;
-import net.minecraft.world.level.storage.TagValueOutput;
-import net.minecraft.world.level.storage.ValueInput;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
@@ -32,10 +26,6 @@ class OutputSlotPlannerTest {
     static void bootstrapMinecraftRegistries() {
         SharedConstants.tryDetectVersion();
         Bootstrap.bootStrap();
-        bindTestComponents(Items.ENDER_PEARL, 16);
-        bindTestComponents(Items.DIAMOND, 64);
-        bindTestComponents(Items.COBBLESTONE, 64);
-        bindTestComponents(Items.STONE, 64);
     }
 
     @Test
@@ -71,9 +61,9 @@ class OutputSlotPlannerTest {
                 .orElseThrow();
 
         assertEquals(1, planned.get(OUTPUT_START).getCount());
-        assertEquals(Component.literal("Existing"), planned.get(OUTPUT_START).get(DataComponents.CUSTOM_NAME));
+        assertEquals(Component.literal("Existing"), planned.get(OUTPUT_START).getHoverName());
         assertEquals(1, planned.get(OUTPUT_START + 1).getCount());
-        assertEquals(Component.literal("Requested"), planned.get(OUTPUT_START + 1).get(DataComponents.CUSTOM_NAME));
+        assertEquals(Component.literal("Requested"), planned.get(OUTPUT_START + 1).getHoverName());
     }
 
     @Test
@@ -104,12 +94,9 @@ class OutputSlotPlannerTest {
                 true,
                 List.of(outputStack));
 
-        RegistryAccess.Frozen lookup = RegistryAccess.fromRegistryOfRegistries(BuiltInRegistries.REGISTRY);
-        TagValueOutput output = TagValueOutput.createWithContext(ProblemReporter.DISCARDING, lookup);
-        operation.save(output);
-        CompoundTag tag = output.buildResult();
-        ValueInput inputView = TagValueInput.create(ProblemReporter.DISCARDING, lookup, tag);
-        PendingDeconstructionOperation restored = PendingDeconstructionOperation.load(inputView).orElseThrow();
+        CompoundTag tag = new CompoundTag();
+        operation.save(tag);
+        PendingDeconstructionOperation restored = PendingDeconstructionOperation.load(tag).orElseThrow();
 
         assertTrue(restored.consumesBook());
         assertTrue(restored.matchesInput(input.copyWithCount(32)));
@@ -117,8 +104,8 @@ class OutputSlotPlannerTest {
         assertEquals(1, restored.outputs().size());
         assertEquals(
                 Component.literal("Exact output"),
-                restored.outputs().getFirst().get(DataComponents.CUSTOM_NAME));
-        assertEquals(1, restored.outputs().getFirst().getCount());
+                restored.outputs().get(0).getHoverName());
+        assertEquals(1, restored.outputs().get(0).getCount());
     }
 
     private static NonNullList<ItemStack> emptyInventory() {
@@ -127,15 +114,8 @@ class OutputSlotPlannerTest {
 
     private static ItemStack namedDiamond(String name) {
         ItemStack stack = new ItemStack(Items.DIAMOND);
-        stack.set(DataComponents.CUSTOM_NAME, Component.literal(name));
+        stack.setHoverName(Component.literal(name));
         return stack;
     }
 
-    private static void bindTestComponents(Item item, int maxStackSize) {
-        if (!item.builtInRegistryHolder().areComponentsBound()) {
-            item.builtInRegistryHolder().bindComponents(DataComponentMap.builder()
-                    .set(DataComponents.MAX_STACK_SIZE, maxStackSize)
-                    .build());
-        }
-    }
 }
