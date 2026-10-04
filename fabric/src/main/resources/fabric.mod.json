@@ -14,7 +14,8 @@
   "environment": "*",
   "entrypoints": {
     "main": ["io.github.derkottersberg.seamlessdeconstructor.fabric.SeamlessDeconstructorFabric"],
-    "client": ["io.github.derkottersberg.seamlessdeconstructor.fabric.SeamlessDeconstructorFabricClient"]
+    "client": ["io.github.derkottersberg.seamlessdeconstructor.fabric.SeamlessDeconstructorFabricClient"],
+    "modmenu": ["io.github.derkottersberg.seamlessdeconstructor.fabric.SeamlessDeconstructorModMenuIntegration"]
   },
   "accessWidener": "seamlessdeconstructor.accesswidener",
   "depends": {
@@ -23,5 +24,8 @@
     "minecraft": "~26.2",
     "java": ">=25",
     "seamlessapi": ">=2.0.0 <3.0.0"
+  },
+  "suggests": {
+    "modmenu": ">=20.0.3"
   }
 }

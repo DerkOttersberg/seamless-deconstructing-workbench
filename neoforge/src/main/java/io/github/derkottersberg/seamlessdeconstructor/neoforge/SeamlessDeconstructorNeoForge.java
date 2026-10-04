@@ -17,6 +17,7 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.neoforged.bus.api.IEventBus;
+import net.neoforged.fml.ModContainer;
 import net.neoforged.fml.common.Mod;
 import net.neoforged.fml.loading.FMLEnvironment;
 import net.neoforged.fml.loading.FMLPaths;
@@ -28,7 +29,7 @@ import net.neoforged.neoforge.registries.DeferredHolder;
 
 @Mod(SeamlessDeconstructorMod.MOD_ID)
 public final class SeamlessDeconstructorNeoForge {
-    public SeamlessDeconstructorNeoForge(IEventBus modEventBus) {
+    public SeamlessDeconstructorNeoForge(IEventBus modEventBus, ModContainer container) {
         registerDevelopmentGameTests(modEventBus);
         NeoForgePlatformServices services = new NeoForgePlatformServices(modEventBus);
         SeamlessDeconstructorMod.initialize(services);
@@ -42,7 +43,7 @@ public final class SeamlessDeconstructorNeoForge {
                 ModBlockEntities.REVERSE_DECONSTRUCTOR_BLOCK_ENTITY.get(),
                 WorkbenchTransferHandler::new));
         if (FMLEnvironment.getDist().isClient()) {
-            SeamlessDeconstructorNeoForgeClient.initialize(modEventBus);
+            SeamlessDeconstructorNeoForgeClient.initialize(modEventBus, container);
         }
     }
 

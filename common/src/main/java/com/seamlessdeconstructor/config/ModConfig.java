@@ -9,6 +9,7 @@ import java.io.Writer;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
+import java.util.Objects;
 
 public final class ModConfig {
     static final String CANONICAL_FILE_NAME = "seamless-deconstructing-workbench.json";
@@ -107,16 +108,29 @@ public final class ModConfig {
         }
     }
 
-    public static int processTicks() {
+    public static synchronized int processTicks() {
         return data.processTicks;
     }
 
-    public static double minLossFraction() {
+    public static synchronized double minLossFraction() {
         return data.minLossPercent / 100.0;
     }
 
-    public static double maxLossFraction() {
+    public static synchronized double maxLossFraction() {
         return data.maxLossPercent / 100.0;
+    }
+
+    public static synchronized Settings snapshot() {
+        return new Settings(data.processTicks, data.minLossPercent, data.maxLossPercent);
+    }
+
+    public static synchronized void update(Settings settings) {
+        Objects.requireNonNull(settings, "settings");
+        data.processTicks = settings.processTicks();
+        data.minLossPercent = settings.minLossPercent();
+        data.maxLossPercent = settings.maxLossPercent();
+        sanitize();
+        save();
     }
 
     private static void migrateLegacyConfig(Path configDirectory) {
@@ -165,5 +179,11 @@ public final class ModConfig {
         public int processTicks = 100;
         public int minLossPercent;
         public int maxLossPercent;
+    }
+
+    public record Settings(int processTicks, int minLossPercent, int maxLossPercent) {
+        public static Settings defaults() {
+            return new Settings(100, 0, 0);
+        }
     }
 }

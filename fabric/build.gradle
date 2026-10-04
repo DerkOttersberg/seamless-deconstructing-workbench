@@ -6,6 +6,7 @@ dependencies {
     def selectedFabricApi = providers.gradleProperty('fabricApiVersion')
             .getOrElse(libs.versions.fabric.api.asProvider().get())
     implementation "net.fabricmc.fabric-api:fabric-api:${selectedFabricApi}"
+    compileOnly libs.modmenu
     def seamlessApiFabric = files(rootProject.file("../seamless-api/fabric/build/libs/seamless-api-${libs.versions.seamless.api.get()}-fabric.jar"))
     seamlessApiFabric.builtBy gradle.includedBuild('seamless-api').task(':fabric:jar')
     implementation seamlessApiFabric

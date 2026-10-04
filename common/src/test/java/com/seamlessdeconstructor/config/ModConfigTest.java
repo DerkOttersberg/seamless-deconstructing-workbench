@@ -85,4 +85,17 @@ class ModConfigTest {
         assertTrue(saved.contains("\"maxLossPercent\": 90"));
         assertFalse(Files.exists(canonical.resolveSibling(canonical.getFileName() + ".tmp")));
     }
+
+    @Test
+    void settingsScreenUpdatesArePersistedAndSnapshotted() throws Exception {
+        ModConfig.load(directory);
+
+        ModConfig.update(new ModConfig.Settings(240, 12, 34));
+
+        assertEquals(new ModConfig.Settings(240, 12, 34), ModConfig.snapshot());
+        String saved = Files.readString(directory.resolve(ModConfig.CANONICAL_FILE_NAME));
+        assertTrue(saved.contains("\"processTicks\": 240"));
+        assertTrue(saved.contains("\"minLossPercent\": 12"));
+        assertTrue(saved.contains("\"maxLossPercent\": 34"));
+    }
 }
