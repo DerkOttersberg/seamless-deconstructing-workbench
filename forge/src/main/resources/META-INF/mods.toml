@@ -7,6 +7,7 @@ issueTrackerURL="https://github.com/DerkOttersberg/seamless-deconstructing-workb
 modId="seamlessdeconstructor"
 version="${mod_version}"
 displayName="Seamless Deconstructing Workbench"
+logoFile="assets/seamlessdeconstructor/icon.png"
 displayURL="https://github.com/DerkOttersberg/seamless-deconstructing-workbench"
 authors="Derk Ottersberg"
 description='''A salvage workbench that deconstructs crafted items back into ingredients.'''

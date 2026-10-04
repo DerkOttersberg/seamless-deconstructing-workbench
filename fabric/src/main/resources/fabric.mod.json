@@ -4,18 +4,26 @@
   "version": "${version}",
   "name": "Seamless Deconstructing Workbench",
   "description": "A salvage workbench that deconstructs crafted items back into ingredients.",
-  "authors": ["Derk Ottersberg"],
+  "authors": [
+    "Derk Ottersberg"
+  ],
   "contact": {
     "sources": "https://github.com/DerkOttersberg/seamless-deconstructing-workbench",
     "issues": "https://github.com/DerkOttersberg/seamless-deconstructing-workbench/issues"
   },
   "license": "MIT",
-  "icon": "assets/seamlessdeconstructor/textures/item/reverse_deconstructor.png",
+  "icon": "assets/seamlessdeconstructor/icon.png",
   "environment": "*",
   "entrypoints": {
-    "main": ["io.github.derkottersberg.seamlessdeconstructor.fabric.SeamlessDeconstructorFabric"],
-    "client": ["io.github.derkottersberg.seamlessdeconstructor.fabric.SeamlessDeconstructorFabricClient"],
-    "modmenu": ["io.github.derkottersberg.seamlessdeconstructor.fabric.SeamlessDeconstructorModMenuIntegration"]
+    "main": [
+      "io.github.derkottersberg.seamlessdeconstructor.fabric.SeamlessDeconstructorFabric"
+    ],
+    "client": [
+      "io.github.derkottersberg.seamlessdeconstructor.fabric.SeamlessDeconstructorFabricClient"
+    ],
+    "modmenu": [
+      "io.github.derkottersberg.seamlessdeconstructor.fabric.SeamlessDeconstructorModMenuIntegration"
+    ]
   },
   "accessWidener": "seamlessdeconstructor.accesswidener",
   "depends": {

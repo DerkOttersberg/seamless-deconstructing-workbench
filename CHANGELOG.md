@@ -2,6 +2,11 @@
 
 ## 2.1.0+mc26.2
 
+- Added a dedicated Mods-menu icon on all loaders.
+- Rebuilt settings with responsive pages, visible ARGB labels, seconds and
+  percentage units, full explanations, and named validation errors.
+- Added an empty-book-slot tooltip explaining plain books, enchantment
+  preservation, consumption, and when books are optional; added input-slot help.
 - Made deconstruction commits atomic: exact randomized results are rolled once,
   persisted with the component-bearing input identity, and never dropped or
   rerolled while output space is blocked or a world is reloaded.

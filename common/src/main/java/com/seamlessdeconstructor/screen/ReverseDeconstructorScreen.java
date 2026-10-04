@@ -75,6 +75,17 @@ public class ReverseDeconstructorScreen extends AbstractContainerScreen<ReverseD
     @Override
     protected void extractTooltip(GuiGraphicsExtractor context, int mouseX, int mouseY) {
         super.extractTooltip(context, mouseX, mouseY);
+        if (!this.menu.getSlot(1).hasItem() && isHovering(29, 41, 18, 18, mouseX, mouseY)) {
+            var lines = java.util.List.of(
+                    Component.translatable("screen.seamlessdeconstructor.book_slot.title").withStyle(net.minecraft.ChatFormatting.GOLD),
+                    Component.translatable("screen.seamlessdeconstructor.book_slot.help"),
+                    Component.translatable("screen.seamlessdeconstructor.book_slot.optional").withStyle(net.minecraft.ChatFormatting.GRAY))
+                    .stream().flatMap(line -> this.font.split(line, Math.min(230, this.width - 24)).stream()).toList();
+            context.setTooltipForNextFrame(this.font, lines, mouseX, mouseY);
+        } else if (!this.menu.getSlot(0).hasItem() && isHovering(29, 23, 18, 18, mouseX, mouseY)) {
+            context.setTooltipForNextFrame(this.font,
+                    Component.translatable("screen.seamlessdeconstructor.input_slot.help"), mouseX, mouseY);
+        }
         if (isHovering(58, 37, 24, 10, mouseX, mouseY)) {
             context.setTooltipForNextFrame(this.font, menu.getStatusText(), mouseX, mouseY);
         }
