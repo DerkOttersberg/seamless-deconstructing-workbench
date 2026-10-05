@@ -10,28 +10,28 @@ class DeconstructionPlanSelectorTest {
     @Test
     void vanillaRecipeWinsOverModdedRecipe() {
         assertTrue(DeconstructionPlanSelector.shouldReplace(
-                new ResourceLocation("example:table"),
+                ResourceLocation.parse("example:table"),
                 20.0D,
-                new ResourceLocation("minecraft:table"),
+                ResourceLocation.parse("minecraft:table"),
                 2.0D));
         assertFalse(DeconstructionPlanSelector.shouldReplace(
-                new ResourceLocation("minecraft:table"),
+                ResourceLocation.parse("minecraft:table"),
                 2.0D,
-                new ResourceLocation("example:table"),
+                ResourceLocation.parse("example:table"),
                 20.0D));
     }
 
     @Test
     void sameNamespaceClassPrefersMoreIngredientUnits() {
         assertTrue(DeconstructionPlanSelector.shouldReplace(
-                new ResourceLocation("minecraft:cheap"),
+                ResourceLocation.parse("minecraft:cheap"),
                 2.0D,
-                new ResourceLocation("minecraft:expensive"),
+                ResourceLocation.parse("minecraft:expensive"),
                 3.0D));
         assertFalse(DeconstructionPlanSelector.shouldReplace(
-                new ResourceLocation("minecraft:expensive"),
+                ResourceLocation.parse("minecraft:expensive"),
                 3.0D,
-                new ResourceLocation("minecraft:cheap"),
+                ResourceLocation.parse("minecraft:cheap"),
                 2.0D));
     }
 }

@@ -18,49 +18,49 @@ import net.minecraft.world.item.Items;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraft.gametest.framework.GameTest;
 import net.minecraftforge.gametest.GameTestHolder;
-import net.minecraftforge.gametest.PrefixGameTestTemplate;
+import net.minecraftforge.gametest.GameTestDontPrefix;
 import net.minecraftforge.items.IItemHandler;
 import net.minecraftforge.registries.RegisterEvent;
 
-@GameTestHolder("seamlessdeconstructor")
-@PrefixGameTestTemplate(false)
+@GameTestHolder(value = "seamlessdeconstructor", namespace = "seamlessdeconstructor")
+@GameTestDontPrefix
 public final class SeamlessDeconstructorForgeGameTests {
-    @GameTest(template = "empty", timeoutTicks = 700)
+    @GameTest(batch = "seamlessdeconstructor", template = "empty", timeoutTicks = 700)
     public static void processesCraftingTableIntoIngredients(GameTestHelper helper) {
         WorkbenchGameTestScenario.processesCraftingTableIntoIngredients(helper);
     }
 
-    @GameTest(template = "empty", timeoutTicks = 700)
+    @GameTest(batch = "seamlessdeconstructor", template = "empty", timeoutTicks = 700)
     public static void transfersEnchantmentsAndConsumesBookAtomically(GameTestHelper helper) {
         WorkbenchGameTestScenario.transfersEnchantmentsAndConsumesBookAtomically(helper);
     }
 
-    @GameTest(template = "empty", timeoutTicks = 700)
+    @GameTest(batch = "seamlessdeconstructor", template = "empty", timeoutTicks = 700)
     public static void damagedInputUsesDurabilityAdjustedSalvage(GameTestHelper helper) {
         WorkbenchGameTestScenario.damagedInputUsesDurabilityAdjustedSalvage(helper);
     }
 
-    @GameTest(template = "empty", timeoutTicks = 700)
+    @GameTest(batch = "seamlessdeconstructor", template = "empty", timeoutTicks = 700)
     public static void rejectsModifiedBooksAsEnchantmentCarriers(GameTestHelper helper) {
         WorkbenchGameTestScenario.rejectsModifiedBooksAsEnchantmentCarriers(helper);
     }
 
-    @GameTest(template = "empty", timeoutTicks = 700)
+    @GameTest(batch = "seamlessdeconstructor", template = "empty", timeoutTicks = 700)
     public static void blockedOperationSurvivesSaveReloadAndCommitsWithoutOverflow(GameTestHelper helper) {
         WorkbenchGameTestScenario.blockedOperationSurvivesSaveReloadAndCommitsWithoutOverflow(helper);
     }
 
-    @GameTest(template = "empty", timeoutTicks = 700)
+    @GameTest(batch = "seamlessdeconstructor", template = "empty", timeoutTicks = 700)
     public static void exposesStableSidedAutomationRules(GameTestHelper helper) {
         WorkbenchGameTestScenario.exposesStableSidedAutomationRules(helper);
     }
 
-    @GameTest(template = "empty", timeoutTicks = 700)
+    @GameTest(batch = "seamlessdeconstructor", template = "empty", timeoutTicks = 700)
     public static void shiftClickRoutesBooksInputsAndOutputs(GameTestHelper helper) {
         WorkbenchGameTestScenario.shiftClickRoutesBooksInputsAndOutputs(helper);
     }
 
-    @GameTest(template = "empty", timeoutTicks = 100)
+    @GameTest(batch = "seamlessdeconstructor", template = "empty", timeoutTicks = 100)
     public static void exposesRegisteredItemHandlers(GameTestHelper helper) {
         BlockPos relativePos = new BlockPos(1, 1, 1);
         helper.setBlock(relativePos, ModBlocks.REVERSE_DECONSTRUCTOR.get().defaultBlockState());
@@ -79,7 +79,7 @@ public final class SeamlessDeconstructorForgeGameTests {
         helper.assertTrue(java.util.Objects.equals(bottom.getSlots(), 6), "Forge output-side handler slot count changed");
 
         ItemStack modifiedBook = new ItemStack(Items.BOOK);
-        modifiedBook.setHoverName(Component.literal("Modified"));
+        modifiedBook.set(net.minecraft.core.component.DataComponents.CUSTOM_NAME, Component.literal("Modified"));
         ItemStack rejected = top.insertItem(1, modifiedBook, false);
         helper.assertTrue(java.util.Objects.equals(rejected.getCount(), 1), "Forge item handler accepted a modified book");
         helper.assertTrue(

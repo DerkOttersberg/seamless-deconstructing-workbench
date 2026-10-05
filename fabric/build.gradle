@@ -49,11 +49,13 @@ tasks.named('check') { dependsOn tasks.named('runGameTest') }
 
 def metadataVersion = project.version.toString()
 def fabricApiRange = libs.versions.fabric.api.range.get()
+def modMenuRange = ">=${libs.versions.modmenu.get()} <${libs.versions.modmenu.get().tokenize('.')[0].toInteger() + 1}.0.0"
 processResources {
+    inputs.property 'modmenu_range', modMenuRange
     inputs.property 'version', metadataVersion
     inputs.property 'fabric_api_range', fabricApiRange
     filesMatching('fabric.mod.json') {
-        expand version: metadataVersion, fabric_api_range: fabricApiRange
+        expand version: metadataVersion, fabric_api_range: fabricApiRange, modmenu_range: modMenuRange
     }
 }
 tasks.named('jar', Jar) {
@@ -68,3 +70,5 @@ tasks.named('sourcesJar', Jar) {
 tasks.named('remapJar') { archiveFileName = "${rootProject.archives_base_name}-${project.version}-fabric.jar" }
 
 tasks.named('remapSourcesJar') { archiveFileName = "${rootProject.archives_base_name}-${project.version}-fabric-sources.jar" }
+
+apply from: rootProject.file('gradle/empty-gametest-structure.gradle')

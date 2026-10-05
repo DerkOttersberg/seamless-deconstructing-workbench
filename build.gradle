@@ -85,7 +85,7 @@ tasks.register('verifyLoaderJars') {
                     new DataInputStream(zip.getInputStream(entry)).withCloseable { header ->
                         if (header.readInt() != -889275714) throw new GradleException("Invalid class: ${entry.name}")
                         header.readUnsignedShort()
-                        if (header.readUnsignedShort() > 61) throw new GradleException("Not Java 17 compatible: ${entry.name}")
+                        if (header.readUnsignedShort() > 65) throw new GradleException("Not Java 21 compatible: ${entry.name}")
                     }
                 }
                 if (zip.getEntry(specification.expected) == null) throw new GradleException("${archive.name} is missing ${specification.expected}")
@@ -103,20 +103,20 @@ tasks.register('verifyLoaderJars') {
                     if (metadata.depends.fabricloader != '>=0.19.5') throw new GradleException("Unexpected Fabric Loader range ${metadata.depends.fabricloader}")
                     if (metadata.depends['fabric-api'] != libs.versions.fabric.api.range.get()) throw new GradleException("Unexpected Fabric API range ${metadata.depends['fabric-api']}")
                     if (metadata.depends.values().any { it == '*' }) throw new GradleException('Fabric dependency wildcards are forbidden')
-                    if (metadata.depends.minecraft != '1.20.1' || metadata.depends.java != '>=17') throw new GradleException('Unexpected Minecraft/Java range')
+                    if (metadata.depends.minecraft != libs.versions.minecraft.get() || metadata.depends.java != '>=21') throw new GradleException('Unexpected Minecraft/Java range')
                     if (metadata.depends.seamlessapi != '>=2.0.0 <3.0.0') throw new GradleException("Unexpected Seamless API range ${metadata.depends.seamlessapi}")
                 } else {
                     def metadata = zip.getInputStream(zip.getEntry(specification.expected)).getText('UTF-8')
                     if (metadata.contains('${')) throw new GradleException("${archive.name} contains unprocessed metadata placeholders")
                     def requiredValues = loader == 'forge'
-                            ? ['modLoader="javafml"', 'loaderVersion="[47,)"', 'license="MIT"',
-                               "version=\"${project.version}\"", 'modId="forge"', 'versionRange="[47.1,48)"',
-                               'modId="minecraft"', 'versionRange="[1.20.1,1.20.2)"',
-                               'modId="seamlessapi"', 'versionRange="[2.0.0,3.0.0)"', 'javaVersion="[17,)"']
+                            ? ['modLoader="javafml"', 'loaderVersion="[52,)"', 'license="MIT"',
+                               "version=\"${project.version}\"", 'modId="forge"', 'versionRange="[52.1.16,53)"',
+                               'modId="minecraft"', 'versionRange="[1.21.1]"',
+                               'modId="seamlessapi"', 'versionRange="[2.0.0,3.0.0)"', 'javaVersion="[21,)"']
                             : ['license="MIT"', "version=\"${project.version}\"",
-                               'modId="neoforge"', 'versionRange="[26.3.0.48-beta,26.4)"',
-                               'modId="minecraft"', 'versionRange="[1.20.1,1.20.2)"',
-                               'modId="seamlessapi"', 'versionRange="[2.0.0,3.0.0)"', 'javaVersion="[17,)"']
+                               'modId="neoforge"', 'versionRange="[21.1.255,21.2)"',
+                               'modId="minecraft"', 'versionRange="[1.21.1]"',
+                               'modId="seamlessapi"', 'versionRange="[2.0.0,3.0.0)"', 'javaVersion="[21,)"']
                     requiredValues.each { value ->
                         if (!metadata.contains(value)) throw new GradleException("${archive.name} is missing processed metadata: ${value}")
                     }
@@ -132,3 +132,5 @@ tasks.named('check') {
     dependsOn tasks.named('verifyLoaderJars')
     dependsOn subprojects.collect { it.tasks.named('check') }
 }
+
+apply from: rootProject.file('gradle/verify-mc1211-artifacts.gradle')

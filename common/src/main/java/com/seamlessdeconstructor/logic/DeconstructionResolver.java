@@ -14,6 +14,8 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.crafting.CraftingRecipe;
 import net.minecraft.world.item.crafting.Ingredient;
 import net.minecraft.world.item.crafting.Recipe;
+import net.minecraft.world.item.crafting.RecipeHolder;
+import net.minecraft.world.item.crafting.CraftingInput;
 import net.minecraft.world.item.crafting.RecipeManager;
 import net.minecraft.world.item.crafting.ShapedRecipe;
 
@@ -43,11 +45,11 @@ public final class DeconstructionResolver {
         Map<Item, DeconstructionPlan> byOutputItem = new LinkedHashMap<>();
         RecipeManager recipeManager = world.getRecipeManager();
 
-        List<Recipe<?>> recipes = new ArrayList<>(recipeManager.getRecipes());
-        recipes.sort(Comparator.comparing(entry -> entry.getId().toString()));
+        List<RecipeHolder<?>> recipes = new ArrayList<>(recipeManager.getRecipes());
+        recipes.sort(Comparator.comparing(entry -> entry.id().toString()));
 
-        for (Recipe<?> recipeEntry : recipes) {
-            if (!(recipeEntry instanceof CraftingRecipe craftingRecipe) || !(craftingRecipe instanceof ShapedRecipe shapedRecipe)) {
+        for (RecipeHolder<?> recipeEntry : recipes) {
+            if (!(recipeEntry.value() instanceof ShapedRecipe shapedRecipe)) {
                 continue;
             }
 
@@ -79,7 +81,7 @@ public final class DeconstructionResolver {
                 perOutput.put(ingredientEntry.getKey(), ingredientEntry.getValue() / (double) outputCount);
             }
 
-            DeconstructionPlan candidatePlan = new DeconstructionPlan(recipeEntry.getId(), perOutput);
+            DeconstructionPlan candidatePlan = new DeconstructionPlan(recipeEntry.id(), perOutput);
             DeconstructionPlan existingPlan = byOutputItem.get(result.getItem());
             if (existingPlan == null || shouldReplace(existingPlan, candidatePlan)) {
                 byOutputItem.put(result.getItem(), candidatePlan);
@@ -95,7 +97,7 @@ public final class DeconstructionResolver {
         synchronized (CACHE) { CACHE.clear(); }
     }
 
-    private static CraftingContainer buildRepresentativeInput(ShapedRecipe recipe) {
+    private static CraftingInput buildRepresentativeInput(ShapedRecipe recipe) {
         int width = Math.max(1, recipe.getWidth());
         int height = Math.max(1, recipe.getHeight());
         AbstractContainerMenu owner = new AbstractContainerMenu(null, -1) {
@@ -108,7 +110,7 @@ public final class DeconstructionResolver {
             if (!ingredient.isEmpty() && ingredient.getItems().length != 0)
                 input.setItem(i, ingredient.getItems()[0].copy());
         }
-        return input;
+        return input.asCraftInput();
     }
 
     private static void mergeApiRegistrations(Map<Item, DeconstructionPlan> byOutputItem) {
@@ -117,7 +119,7 @@ public final class DeconstructionResolver {
                 .forEach(entry -> {
                     ResourceLocation inputId;
                     try {
-                        inputId = new ResourceLocation(entry.getKey());
+                        inputId = ResourceLocation.parse(entry.getKey());
                     } catch (RuntimeException ignored) {
                         return;
                     }
@@ -131,7 +133,7 @@ public final class DeconstructionResolver {
                     Map<Item, Double> ingredients = new LinkedHashMap<>();
                     registration.ingredientUnits().forEach((ingredientId, units) -> {
                         try {
-                            Item ingredient = BuiltInRegistries.ITEM.get(new ResourceLocation(ingredientId));
+                            Item ingredient = BuiltInRegistries.ITEM.get(ResourceLocation.parse(ingredientId));
                             if (ingredient != null && units != null && units > 0.0D) {
                                 ingredients.put(ingredient, units);
                             }
@@ -140,7 +142,7 @@ public final class DeconstructionResolver {
                     });
 
                     if (!ingredients.isEmpty()) {
-                        ResourceLocation registrationId = new ResourceLocation(
+                        ResourceLocation registrationId = ResourceLocation.fromNamespaceAndPath(
                                 "seamlessapi",
                                 "registered/" + inputId.getNamespace() + "/" + inputId.getPath());
                         byOutputItem.put(

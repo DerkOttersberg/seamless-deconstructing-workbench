@@ -1,0 +1,12 @@
+{
+  "fabricId": "seamlessdeconstructor",
+  "fmlId": "seamlessdeconstructor",
+  "license": "MIT",
+  "commonClass": "com/seamlessdeconstructor/SeamlessDeconstructorMod.class",
+  "asset": "assets/seamlessdeconstructor/icon.png",
+  "sha256": "7F9AC1700FC4FE2ECA98D7CDD0C63D35685F2D9CE0421B4BE942DDFD1EC04FE5",
+  "curseforgeProjectId": 1493520,
+  "projectPage": "https://www.curseforge.com/minecraft/mc-mods/salvage-table-seamless-item-reclamation",
+  "source": "https://media.forgecdn.net/avatars/1727/890/639099483932373711.png",
+  "retrievedDate": "2026-10-05"
+}

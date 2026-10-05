@@ -75,7 +75,7 @@ public final class SeamlessDeconstructorGameTests {
         helper.assertTrue(bottom != null, "Fabric output-side item storage was not exposed");
 
         ItemStack modifiedBook = new ItemStack(Items.BOOK);
-        modifiedBook.setHoverName(Component.literal("Modified"));
+        modifiedBook.set(net.minecraft.core.component.DataComponents.CUSTOM_NAME, Component.literal("Modified"));
         try (Transaction transaction = Transaction.openOuter()) {
             helper.assertTrue(java.util.Objects.equals(top.insert(ItemVariant.of(modifiedBook), 1, transaction), 0L), "Fabric Transfer API accepted a modified book");
         }

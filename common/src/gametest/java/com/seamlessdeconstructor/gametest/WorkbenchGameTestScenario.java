@@ -65,9 +65,9 @@ public final class WorkbenchGameTestScenario {
     public static void transfersEnchantmentsAndConsumesBookAtomically(GameTestHelper helper) {
         ReverseDeconstructorBlockEntity blockEntity = placeWorkbench(helper);
         ItemStack input = new ItemStack(Items.IRON_PICKAXE);
-        var efficiency = Enchantments.BLOCK_EFFICIENCY;
+        var efficiency = helper.getLevel().registryAccess().registryOrThrow(Registries.ENCHANTMENT).getHolderOrThrow(Enchantments.EFFICIENCY);
         input.enchant(efficiency, 3);
-        java.util.Map<Enchantment, Integer> expectedEnchantments = EnchantmentHelper.getEnchantments(input);
+        var expectedEnchantments = EnchantmentHelper.getEnchantmentsForCrafting(input);
 
         blockEntity.setItem(ReverseDeconstructorBlockEntity.INPUT_SLOT, input);
         blockEntity.setItem(ReverseDeconstructorBlockEntity.BOOK_SLOT, new ItemStack(Items.BOOK));
@@ -99,7 +99,7 @@ public final class WorkbenchGameTestScenario {
 
                 ItemStack enchantedBook = findOutput(blockEntity, Items.ENCHANTED_BOOK);
                 helper.assertFalse(enchantedBook.isEmpty(), "No enchanted book was produced");
-                helper.assertTrue(java.util.Objects.equals(EnchantmentHelper.getEnchantments(enchantedBook), expectedEnchantments), "The enchanted book did not preserve the input enchantments exactly");
+                helper.assertTrue(java.util.Objects.equals(EnchantmentHelper.getEnchantmentsForCrafting(enchantedBook), expectedEnchantments), "The enchanted book did not preserve the input enchantments exactly");
                 helper.succeed();
             });
         });
@@ -138,10 +138,10 @@ public final class WorkbenchGameTestScenario {
     public static void rejectsModifiedBooksAsEnchantmentCarriers(GameTestHelper helper) {
         ReverseDeconstructorBlockEntity blockEntity = placeWorkbench(helper);
         ItemStack input = new ItemStack(Items.IRON_PICKAXE);
-        var efficiency = Enchantments.BLOCK_EFFICIENCY;
+        var efficiency = helper.getLevel().registryAccess().registryOrThrow(Registries.ENCHANTMENT).getHolderOrThrow(Enchantments.EFFICIENCY);
         input.enchant(efficiency, 3);
         ItemStack modifiedBook = new ItemStack(Items.BOOK);
-        modifiedBook.setHoverName(Component.literal("Do not consume"));
+        modifiedBook.set(net.minecraft.core.component.DataComponents.CUSTOM_NAME, Component.literal("Do not consume"));
 
         blockEntity.setItem(ReverseDeconstructorBlockEntity.INPUT_SLOT, input);
         blockEntity.setItem(ReverseDeconstructorBlockEntity.BOOK_SLOT, modifiedBook);
@@ -155,7 +155,7 @@ public final class WorkbenchGameTestScenario {
             ItemStack retainedBook = blockEntity.getItem(ReverseDeconstructorBlockEntity.BOOK_SLOT);
             helper.assertTrue(
                     retainedBook.getCount() == 1
-                            && ItemStack.isSameItemSameTags(modifiedBook, retainedBook),
+                            && ItemStack.isSameItemSameComponents(modifiedBook, retainedBook),
                     "The modified book was changed or consumed");
             helper.assertTrue(
                     findOutput(blockEntity, Items.ENCHANTED_BOOK).isEmpty(),
@@ -165,9 +165,10 @@ public final class WorkbenchGameTestScenario {
     }
 
     public static void blockedOperationSurvivesSaveReloadAndCommitsWithoutOverflow(GameTestHelper helper) {
+        verifiesLegacyItemComponents(helper);
         ReverseDeconstructorBlockEntity blockEntity = placeWorkbench(helper);
         ItemStack randomizedInput = new ItemStack(Items.RAIL);
-        var efficiency = Enchantments.BLOCK_EFFICIENCY;
+        var efficiency = helper.getLevel().registryAccess().registryOrThrow(Registries.ENCHANTMENT).getHolderOrThrow(Enchantments.EFFICIENCY);
         randomizedInput.enchant(efficiency, 1);
         var randomizedPlan = DeconstructionResolver.resolve(helper.getLevel(), randomizedInput.getItem());
         helper.assertTrue(randomizedPlan.isPresent(), "The live recipe manager did not resolve the rail recipe");
@@ -183,7 +184,7 @@ public final class WorkbenchGameTestScenario {
             blockEntity.setItem(slot, new ItemStack(Items.COBBLESTONE, 64));
         }
 
-        var legacySaved = blockEntity.saveWithFullMetadata();
+        var legacySaved = blockEntity.saveWithFullMetadata(helper.getLevel().registryAccess());
         legacySaved.putInt("Progress", 37);
         legacySaved.putInt("MaxProgress", 100);
         legacySaved.remove("MachineState");
@@ -192,14 +193,14 @@ public final class WorkbenchGameTestScenario {
         BlockEntity legacyLoaded = BlockEntity.loadStatic(
                 helper.absolutePos(WORKBENCH_POS),
                 blockEntity.getBlockState(),
-                legacySaved);
+                legacySaved, helper.getLevel().registryAccess());
         helper.assertTrue(
                 legacyLoaded instanceof ReverseDeconstructorBlockEntity,
                 "Historical workbench NBT did not load through the preserved block-entity ID");
         ReverseDeconstructorBlockEntity legacyWorkbench = (ReverseDeconstructorBlockEntity) legacyLoaded;
         helper.assertTrue(java.util.Objects.equals(legacyWorkbench.getItem(ReverseDeconstructorBlockEntity.INPUT_SLOT).getCount(), 1), "Historical Items NBT was not retained");
         helper.assertTrue(java.util.Objects.equals(legacyWorkbench.getMachineState(), ReverseDeconstructorBlockEntity.MACHINE_PROCESSING), "Historical Progress NBT was not migrated into the synchronized machine state");
-        Player legacyPlayer = helper.makeMockPlayer();
+        Player legacyPlayer = helper.makeMockPlayer(net.minecraft.world.level.GameType.SURVIVAL);
         ReverseDeconstructorScreenHandler legacyMenu = (ReverseDeconstructorScreenHandler) legacyWorkbench.createMenu(
                 2,
                 legacyPlayer.getInventory(),
@@ -211,17 +212,17 @@ public final class WorkbenchGameTestScenario {
             helper.assertTrue(java.util.Objects.equals(blockEntity.getMachineState(), ReverseDeconstructorBlockEntity.MACHINE_BLOCKED), "Full outputs did not put the machine into its synchronized blocked state");
             helper.assertTrue(java.util.Objects.equals(blockEntity.getItem(ReverseDeconstructorBlockEntity.INPUT_SLOT).getCount(), 1), "A blocked operation consumed its input");
 
-            var saved = blockEntity.saveWithFullMetadata();
+            var saved = blockEntity.saveWithFullMetadata(helper.getLevel().registryAccess());
             helper.assertTrue(saved.contains("PendingOperation"), "The exact pending operation was not persisted");
             PendingDeconstructionOperation expectedPending = PendingDeconstructionOperation.load(
-                            saved)
+                            saved, helper.getLevel().registryAccess())
                     .orElseThrow(() -> new AssertionError("The randomized pending operation could not be decoded"));
 
             BlockPos absolutePos = helper.absolutePos(WORKBENCH_POS);
             BlockEntity reloaded = BlockEntity.loadStatic(
                     absolutePos,
                     blockEntity.getBlockState(),
-                    saved);
+                    saved, helper.getLevel().registryAccess());
             helper.assertTrue(
                     reloaded instanceof ReverseDeconstructorBlockEntity,
                     "The saved workbench did not reload as its preserved block-entity ID");
@@ -231,9 +232,9 @@ public final class WorkbenchGameTestScenario {
             ReverseDeconstructorBlockEntity reloadedWorkbench = (ReverseDeconstructorBlockEntity) reloaded;
 
             helper.runAfterDelay(2L, () -> {
-                var stillBlocked = reloadedWorkbench.saveWithFullMetadata();
+                var stillBlocked = reloadedWorkbench.saveWithFullMetadata(helper.getLevel().registryAccess());
                 PendingDeconstructionOperation reloadedPending = PendingDeconstructionOperation.load(
-                                stillBlocked)
+                                stillBlocked, helper.getLevel().registryAccess())
                         .orElseThrow(() -> new AssertionError("Reload discarded the randomized pending operation"));
                 assertExactStackLists(
                         helper,
@@ -286,7 +287,7 @@ public final class WorkbenchGameTestScenario {
                         Direction.UP),
                 "Automation cannot insert the required plain book");
         ItemStack modifiedBook = new ItemStack(Items.BOOK);
-        modifiedBook.setHoverName(Component.literal("Modified"));
+        modifiedBook.set(net.minecraft.core.component.DataComponents.CUSTOM_NAME, Component.literal("Modified"));
         helper.assertFalse(
                 blockEntity.canPlaceItemThroughFace(
                         ReverseDeconstructorBlockEntity.BOOK_SLOT,
@@ -304,7 +305,7 @@ public final class WorkbenchGameTestScenario {
 
     public static void shiftClickRoutesBooksInputsAndOutputs(GameTestHelper helper) {
         ReverseDeconstructorBlockEntity blockEntity = placeWorkbench(helper);
-        Player player = helper.makeMockPlayer();
+        Player player = helper.makeMockPlayer(net.minecraft.world.level.GameType.SURVIVAL);
         ReverseDeconstructorScreenHandler menu = (ReverseDeconstructorScreenHandler) blockEntity.createMenu(
                 1,
                 player.getInventory(),
@@ -326,13 +327,13 @@ public final class WorkbenchGameTestScenario {
         helper.assertTrue(java.util.Objects.equals(player.getInventory().getItem(9).getCount(), 4), "Shift-clicking a book consumed more than one item");
 
         ItemStack modifiedBook = new ItemStack(Items.BOOK);
-        modifiedBook.setHoverName(Component.literal("Modified"));
+        modifiedBook.set(net.minecraft.core.component.DataComponents.CUSTOM_NAME, Component.literal("Modified"));
         player.getInventory().setItem(11, modifiedBook.copy());
         helper.assertTrue(
                 menu.quickMoveStack(player, 10).isEmpty(),
                 "Shift-click routed a component-bearing book as a plain book");
         helper.assertTrue(
-                ItemStack.isSameItemSameTags(player.getInventory().getItem(11), modifiedBook),
+                ItemStack.isSameItemSameComponents(player.getInventory().getItem(11), modifiedBook),
                 "Shift-click changed or consumed a component-bearing book");
 
         player.getInventory().setItem(10, new ItemStack(Items.CRAFTING_TABLE));
@@ -368,6 +369,54 @@ public final class WorkbenchGameTestScenario {
         return (ReverseDeconstructorBlockEntity) helper.getBlockEntity(WORKBENCH_POS);
     }
 
+    private static void verifiesLegacyItemComponents(GameTestHelper helper) {
+        var oldStack = new net.minecraft.nbt.CompoundTag();
+        oldStack.putString("id", "minecraft:rail");
+        oldStack.putByte("Count", (byte) 1);
+        var oldTag = new net.minecraft.nbt.CompoundTag();
+        var display = new net.minecraft.nbt.CompoundTag();
+        display.putString("Name", "{\"text\":\"Preserved pending input\"}");
+        oldTag.put("display", display);
+        var oldEnchantments = new net.minecraft.nbt.ListTag();
+        var efficiencyTag = new net.minecraft.nbt.CompoundTag();
+        efficiencyTag.putString("id", "minecraft:efficiency");
+        efficiencyTag.putShort("lvl", (short) 1);
+        oldEnchantments.add(efficiencyTag);
+        oldTag.put("Enchantments", oldEnchantments);
+        oldStack.put("tag", oldTag);
+
+        var expectedInput = new ItemStack(Items.RAIL);
+        expectedInput.enchant(helper.getLevel().registryAccess().registryOrThrow(Registries.ENCHANTMENT)
+            .getHolderOrThrow(Enchantments.EFFICIENCY), 1);
+        expectedInput.set(net.minecraft.core.component.DataComponents.CUSTOM_NAME, Component.literal("Preserved pending input"));
+        var oldOutput = new net.minecraft.nbt.CompoundTag();
+        oldOutput.putString("id", "minecraft:iron_ingot");
+        oldOutput.putByte("Count", (byte) 3);
+        var outputs = new net.minecraft.nbt.ListTag();
+        outputs.add(oldOutput);
+        var pending = new net.minecraft.nbt.CompoundTag();
+        pending.put("Input", oldStack);
+        pending.put("Outputs", outputs);
+        pending.putBoolean("ConsumesBook", true);
+        var root = new net.minecraft.nbt.CompoundTag();
+        root.put("PendingOperation", pending);
+        var loaded = PendingDeconstructionOperation.load(root, helper.getLevel().registryAccess()).orElseThrow();
+        helper.assertTrue(loaded.matchesInput(expectedInput), "1.20.1 pending input lost its name/enchantment components");
+        helper.assertTrue(loaded.consumesBook(), "Legacy pending operation lost the book requirement");
+        helper.assertTrue(loaded.outputs().size() == 1 && loaded.outputs().getFirst().is(Items.IRON_INGOT)
+            && loaded.outputs().getFirst().getCount() == 3, "Legacy pending output count changed");
+
+        var inventory = new net.minecraft.nbt.ListTag();
+        var oldInventoryStack = oldStack.copy();
+        oldInventoryStack.putByte("Slot", (byte) ReverseDeconstructorBlockEntity.INPUT_SLOT);
+        inventory.add(oldInventoryStack);
+        root.put("Items", inventory);
+        var historical = new ReverseDeconstructorBlockEntity(helper.absolutePos(WORKBENCH_POS), ModBlocks.REVERSE_DECONSTRUCTOR.get().defaultBlockState());
+        historical.loadCustomOnly(root, helper.getLevel().registryAccess());
+        helper.assertTrue(ItemStack.isSameItemSameComponents(historical.getItem(ReverseDeconstructorBlockEntity.INPUT_SLOT), expectedInput),
+            "1.20.1 workbench inventory was not migrated into item components");
+    }
+
     private static ItemStack findOutput(ReverseDeconstructorBlockEntity blockEntity, Item item) {
         for (int slot = ReverseDeconstructorBlockEntity.OUTPUT_START;
                 slot <= ReverseDeconstructorBlockEntity.OUTPUT_END;
@@ -390,7 +439,7 @@ public final class WorkbenchGameTestScenario {
             ItemStack expectedStack = expected.get(index);
             ItemStack actualStack = actual.get(index);
             helper.assertTrue(
-                    ItemStack.isSameItemSameTags(expectedStack, actualStack)
+                    ItemStack.isSameItemSameComponents(expectedStack, actualStack)
                             && expectedStack.getCount() == actualStack.getCount(),
                     message + " (stack " + index + ")");
         }

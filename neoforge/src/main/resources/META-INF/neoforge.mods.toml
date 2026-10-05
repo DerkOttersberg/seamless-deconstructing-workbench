@@ -1,5 +1,5 @@
 modLoader="javafml"
-loaderVersion="${loader_version_range}"
+loaderVersion="[4,)"
 license="MIT"
 issueTrackerURL="https://github.com/DerkOttersberg/seamless-deconstructing-workbench/issues"
 
@@ -13,9 +13,9 @@ authors="Derk Ottersberg"
 description='''A salvage workbench that deconstructs crafted items back into ingredients.'''
 
 [[dependencies.seamlessdeconstructor]]
-modId="forge"
-mandatory=true
-versionRange="${forge_version_range}"
+modId="neoforge"
+type="required"
+versionRange="${neo_version_range}"
 ordering="NONE"
 side="BOTH"
 
@@ -24,14 +24,14 @@ javaVersion="[21,)"
 
 [[dependencies.seamlessdeconstructor]]
 modId="minecraft"
-mandatory=true
+type="required"
 versionRange="${minecraft_version_range}"
 ordering="NONE"
 side="BOTH"
 
 [[dependencies.seamlessdeconstructor]]
 modId="seamlessapi"
-mandatory=true
+type="required"
 versionRange="[2.0.0,3.0.0)"
 ordering="AFTER"
 side="BOTH"

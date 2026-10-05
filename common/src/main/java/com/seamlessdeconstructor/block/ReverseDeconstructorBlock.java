@@ -27,6 +27,10 @@ import net.minecraft.world.level.block.state.properties.EnumProperty;
 import net.minecraft.world.phys.BlockHitResult;
 
 public class ReverseDeconstructorBlock extends BaseEntityBlock {
+    public static final com.mojang.serialization.MapCodec<ReverseDeconstructorBlock> CODEC = simpleCodec(ReverseDeconstructorBlock::new);
+
+    @Override
+    protected com.mojang.serialization.MapCodec<? extends BaseEntityBlock> codec() { return CODEC; }
     public static final EnumProperty<Direction> FACING = BlockStateProperties.HORIZONTAL_FACING;
     public static final BooleanProperty ACTIVE = BooleanProperty.create("active");
 
@@ -68,7 +72,7 @@ public class ReverseDeconstructorBlock extends BaseEntityBlock {
     }
 
     @Override
-    public InteractionResult use(BlockState state, Level level, BlockPos pos, Player player, net.minecraft.world.InteractionHand hand, BlockHitResult hit) {
+    protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hit) {
         if (level instanceof ServerLevel
                 && level.getBlockEntity(pos) instanceof ReverseDeconstructorBlockEntity reverseDeconstructorBlockEntity) {
             player.openMenu(reverseDeconstructorBlockEntity);

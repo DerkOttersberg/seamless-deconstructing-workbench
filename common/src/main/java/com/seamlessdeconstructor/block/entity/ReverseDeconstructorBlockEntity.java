@@ -192,7 +192,7 @@ public class ReverseDeconstructorBlockEntity extends BlockEntity implements Impl
             return Optional.empty();
         }
 
-        Map<Enchantment, Integer> enchantments = EnchantmentHelper.getEnchantments(input);
+        var enchantments = EnchantmentHelper.getEnchantmentsForCrafting(input);
         boolean consumesBook = !enchantments.isEmpty();
         if (consumesBook && !hasPlainBook()) {
             return Optional.empty();
@@ -215,7 +215,7 @@ public class ReverseDeconstructorBlockEntity extends BlockEntity implements Impl
             List<ItemStack> exactOutputs = new ArrayList<>();
             if (consumesBook) {
                 ItemStack enchantedBook = new ItemStack(Items.ENCHANTED_BOOK);
-                EnchantmentHelper.setEnchantments(enchantments, enchantedBook);
+                EnchantmentHelper.setEnchantments(enchantedBook, enchantments);
                 exactOutputs.add(enchantedBook);
             }
             rolledOutput.forEach((item, count) -> {
@@ -264,7 +264,7 @@ public class ReverseDeconstructorBlockEntity extends BlockEntity implements Impl
                 return;
             }
             try {
-                ResourceLocation identifier = new ResourceLocation(id);
+                ResourceLocation identifier = ResourceLocation.parse(id);
                 if (!BuiltInRegistries.ITEM.containsKey(identifier)) {
                     SeamlessDeconstructorMod.LOGGER.warn("Ignoring unknown item '{}' returned by a deconstruction modifier", id);
                     return;
@@ -363,13 +363,13 @@ public class ReverseDeconstructorBlockEntity extends BlockEntity implements Impl
     }
 
     private static boolean hasEnchantments(ItemStack input) {
-        return !EnchantmentHelper.getEnchantments(input).isEmpty();
+        return !EnchantmentHelper.getEnchantmentsForCrafting(input).isEmpty();
     }
 
     public static boolean isPlainBook(ItemStack stack) {
         return !stack.isEmpty()
                 && stack.is(Items.BOOK)
-                && ItemStack.isSameItemSameTags(stack, new ItemStack(Items.BOOK));
+                && ItemStack.isSameItemSameComponents(stack, new ItemStack(Items.BOOK));
     }
 
     public int getMaxStackSize(ItemStack stack) {
@@ -389,15 +389,24 @@ public class ReverseDeconstructorBlockEntity extends BlockEntity implements Impl
     }
 
     @Override
-    public void load(CompoundTag view) {
-        super.load(view);
+    protected void loadAdditional(CompoundTag view, net.minecraft.core.HolderLookup.Provider registries) {
+        super.loadAdditional(view, registries);
         for (int i = 0; i < items.size(); i++) {
             items.set(i, ItemStack.EMPTY);
         }
-        ContainerHelper.loadAllItems(view, items);
+        CompoundTag migratedInventory = view.copy();
+        var savedItems = migratedInventory.getList("Items", net.minecraft.nbt.Tag.TAG_COMPOUND);
+        for (int index = 0; index < savedItems.size(); index++) {
+            var savedItem = savedItems.getCompound(index);
+            var migratedItem = com.seamlessdeconstructor.logic.LegacyItemStackMigration.migrate(savedItem);
+            // Slot is container bookkeeping, not part of the vanilla ItemStack codec.
+            migratedItem.putByte("Slot", savedItem.getByte("Slot"));
+            savedItems.set(index, migratedItem);
+        }
+        ContainerHelper.loadAllItems(migratedInventory, items, registries);
         progress = Math.max(0, view.getInt("Progress"));
         maxProgress = Math.max(1, view.contains("MaxProgress") ? view.getInt("MaxProgress") : ModConfig.processTicks());
-        pendingOperation = PendingDeconstructionOperation.load(view).orElse(null);
+        pendingOperation = PendingDeconstructionOperation.load(view, registries).orElse(null);
         machineState = view.contains("MachineState") ? view.getInt("MachineState")
                 : (pendingOperation != null ? MACHINE_BLOCKED : (progress > 0 ? MACHINE_PROCESSING : MACHINE_IDLE));
         if (machineState < MACHINE_IDLE || machineState > MACHINE_BLOCKED) {
@@ -414,15 +423,15 @@ public class ReverseDeconstructorBlockEntity extends BlockEntity implements Impl
     }
 
     @Override
-    protected void saveAdditional(CompoundTag view) {
-        super.saveAdditional(view);
-        ContainerHelper.saveAllItems(view, items);
+    protected void saveAdditional(CompoundTag view, net.minecraft.core.HolderLookup.Provider registries) {
+        super.saveAdditional(view, registries);
+        ContainerHelper.saveAllItems(view, items, registries);
         view.putInt("Progress", progress);
         view.putInt("MaxProgress", maxProgress);
         view.putInt("MachineState", machineState);
         view.putInt("BlockReason", blockReason);
         if (pendingOperation != null) {
-            pendingOperation.save(view);
+            pendingOperation.save(view, registries);
         } else {
             view.remove(PendingDeconstructionOperation.STORAGE_KEY);
         }
@@ -449,8 +458,8 @@ public class ReverseDeconstructorBlockEntity extends BlockEntity implements Impl
     }
 
     @Override
-    public net.minecraft.nbt.CompoundTag getUpdateTag() {
-        return saveWithoutMetadata();
+    public net.minecraft.nbt.CompoundTag getUpdateTag(net.minecraft.core.HolderLookup.Provider registries) {
+        return saveWithoutMetadata(registries);
     }
 
     public ItemStack getRenderInputStack() {

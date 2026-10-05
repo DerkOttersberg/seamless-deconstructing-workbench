@@ -1,43 +1,38 @@
-# Porting Seamless Deconstructing Workbench
+# Minecraft 1.21.1 porting guide
 
-Minecraft, Java, loader, and build-tool versions live only in
-`gradle/libs.versions.toml`. Update that catalog first and compile `common`
-against Minecraft's official names before adapting loader entrypoints.
+One version branch holds `common`, `fabric`, `forge` and `neoforge`.
+Pins live only in `gradle/libs.versions.toml`. Java 25 hosts Gradle; Java 21
+compiles/runs Minecraft. Use regular Loom, official Mojang mappings and
+`remapJar`; named development jars are not distributable.
 
-## Stable common behavior
+Keep common code free of loader/JEI imports. Inject platform services explicitly;
+no reflective discovery, runtime Architectury API or shaded SeamlessLib.
+Preserve compatibility/registry IDs, public library packages and licensing.
 
-- Keep `seamlessdeconstructor:reverse_deconstructor` for the block, item, block
-  entity, and menu. Changing these IDs loses placed blocks or installation
-  continuity.
-- `DeconstructionResolver` owns deterministic shaped-recipe selection and
-  Seamless API registrations.
-- `DeconstructionPlan`, `FractionalOutputRoller`, and
-  `DeconstructionOutputRules` own quantity/loss/durability behavior.
-- The common block entity owns processing and inventory conservation. Loader
-  modules only register objects, screens, renderer hooks, and config paths.
-- `PlatformServices` is passed explicitly; do not introduce reflection or
-  `ServiceLoader` discovery.
+## Version boundaries
 
-Do not add loader imports to `common`; `verifyCommonIsolation` rejects them.
-Seamless API remains an external 2.x dependency and must not be shaded.
+1.21.1 uses item data components and registry-aware persistence,
+`RecipeHolder`/`CraftingInput`, typed `CustomPacketPayload` networking,
+`DeltaTracker` rendering and vanilla vertex APIs. Use singular data paths:
+`recipe`, `loot_table`, `tags/item`, `structure`. Never downgrade a newer world.
 
-## Port checklist
+Custom old Count/tag stacks in pending operations and inventories pass through
+vanilla item data fixers before modern decoding. Native GameTests preserve
+names, enchants and pending counts. Copied fixtures do not cover every modpack.
 
-1. Update `gradle/libs.versions.toml` and resource pack/data pack metadata.
-2. Run `gradlew.bat clean check build` on Java 25, using Java 17 toolchains.
-3. Inspect all jars for loader-metadata isolation and canonical filenames.
-4. Boot dedicated servers and clients for both loaders.
-5. Run the live processing GameTest and check recipe resolution, fractional
-   output, enchanted-item handling, automation faces, and menu closure.
-6. Upgrade only copied historical worlds/configs and confirm the registered
-   workbench survives with its inventory and block entity intact.
-7. Run the matching five-mod combined profiles and retain logs/screenshots.
+## Verification
 
-## Legacy build boundary
+Run `clean check build` and inspect all three remapped jars. Forge 52 filters
+GameTest batch namespaces and uses `GameTestDontPrefix`; NeoForge 21 has its
+own template-prefix rules. Test-only source staging must never enter releases.
+Keep test-discovery and required-pass guards.
 
-This branch uses regular `dev.architectury.loom` and official Mojang mappings.
-Compile shared sources into each loader module; do not put a remapped common jar
-on a named development runtime classpath. Both loaders need legacy mixin refmaps.
-Only loader remapped `build/libs` jars are distributable. Java 25 hosts Gradle;
-Java 17 is used for compilation and Minecraft. Keep plural 1.20.1 data directories
-and NBT item persistence; newer data components are not interchangeable.
+Test independent installs plus dependencies, combined profiles, genuine
+packaged servers, multiplayer, save/restart, migration backups and actual
+optional integrations. Use the private WSL/Xvfb wrapper for GUI checks only;
+never steal desktop focus or inject OS mouse/keyboard input. Software OpenGL
+does not prove physical-GPU coverage; 1.21.1 has no vanilla Vulkan backend.
+
+Icons and all-loader artifact guards are under `gradle/`.
+Historical 1.20.1/26.x helpers and acceptance are not current results. See
+[.github/RELEASE_ACCEPTANCE.md](.github/RELEASE_ACCEPTANCE.md).

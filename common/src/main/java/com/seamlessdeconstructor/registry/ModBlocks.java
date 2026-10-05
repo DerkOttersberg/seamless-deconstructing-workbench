@@ -29,7 +29,7 @@ public final class ModBlocks {
         String path = "reverse_deconstructor";
         ResourceLocation id = SeamlessDeconstructorMod.id(path);
         ResourceKey<Block> blockKey = ResourceKey.create(Registries.BLOCK, id);
-        BlockBehaviour.Properties blockProperties = BlockBehaviour.Properties.copy(Blocks.CRAFTING_TABLE)
+        BlockBehaviour.Properties blockProperties = BlockBehaviour.Properties.ofFullCopy(Blocks.CRAFTING_TABLE)
                 .noOcclusion()
                 .isSuffocating((state, level, pos) -> false)
                 .isViewBlocking((state, level, pos) -> false)

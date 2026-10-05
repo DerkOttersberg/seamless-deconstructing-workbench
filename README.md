@@ -1,60 +1,46 @@
 # Seamless Deconstructing Workbench
 
-This is the `1.20.1` source branch: **Fabric and Forge only**, with Java 17
-for Minecraft. The `26.2` and `26.3` branches remain separate; never mix their
-jars, worlds, or dependency checkouts with this line. See
-[REPOSITORY_WORKFLOW.md](REPOSITORY_WORKFLOW.md).
+Minecraft **1.21.1**, Java **21**; separate **Fabric, Forge and NeoForge** jars.
+Version `2.1.1+mc1.21.1`. Never mix these with 1.20.1 or 26.x binaries.
 
-Seamless Deconstructing Workbench adds a salvage workbench that resolves
-shaped crafting recipes and returns their ingredients with configurable loss
-and durability scaling. Version `2.1.1+mc1.20.1` supports Minecraft Java 1.20.1
-on Fabric and Forge and requires Seamless API 2.x.
+Salvages crafted items, with fractional accounting, enchantment recovery, book-slot hint and pending-output persistence. Requires matching SeamlessLib 2.x.
 
-The registry namespace remains `seamlessdeconstructor`, including the
-`reverse_deconstructor` block, item, block entity, and menu IDs, so copied
-worlds can retain existing workbenches.
+## Build and architecture
 
-## Architecture
+`common` holds loader-neutral code, resources and tests; `fabric`, `forge`
+and `neoforge` explicitly inject their platform services. Architectury Loom
+is build tooling only, not a runtime API. Pins are in
+`gradle/libs.versions.toml`. Gameplay composite builds use a sibling
+`seamless-api` checkout for the matching Minecraft line; the library is not shaded.
 
-- `common` contains recipe selection, fractional output, inventory rules,
-  block entity/menu/screen behavior, rendering, resources, and tests.
-- `fabric` and `forge` contain registration, configuration-path,
-  creative-tab, screen, and renderer lifecycle adapters.
-- Architectury Loom is build tooling only; Architectury API is not required at
-  runtime.
-- External deconstruction registrations and modifiers are consumed through
-  Seamless API. The API is a normal dependency and is not shaded into this mod.
-
-Completed salvage operations are planned atomically. Their exact randomized
-results and NBT-bearing input identity are saved while an output is
-blocked, so freeing capacity or reloading the world cannot reroll the result.
-Enchanted inputs also require an unmodified book and produce the exact stored
-enchantments as part of the same transaction.
-
-Automation is exposed through Fabric Transfer API, Forge item capabilities, and the shared sided-container rules. The top and
-sides accept input and one unmodified book; the bottom exposes only outputs.
-
-The old `seamlessdeconstructor.json` configuration file is copied to
-`seamless-deconstructing-workbench.json` on first launch. Both the original
-file and a `.bak` copy are retained. Invalid canonical files are retained as
-`.invalid.bak` before sanitized defaults are written atomically.
-
-## Build
-
-Run Gradle on Java 25; source and Minecraft use the Java 17 toolchain:
-
+Run Gradle with Java 25 installed; source/game tasks use Java 21:
 
 ```text
 gradlew.bat clean check build
 ```
 
-The build uses the sibling `seamless-api` checkout as a Gradle composite and
-produces one jar per loader under each loader module's `build/libs` directory.
-`check` runs unit tests and isolated Fabric and Forge GameTest
-servers. The gameplay suite covers preserved IDs, live processing, exact
-enchantment-book output, atomic blocked/reloaded operations, sided automation,
-loader-native storage adapters, and menu shift-click routing. Every loader run
-also enforces a discovered-test count so an empty GameTest launch cannot pass.
+Distribute only remapped
+`<loader>/build/libs/seamless-deconstructing-workbench-2.1.1+mc1.21.1-<loader>.jar`.
+Dev/QA jars are not release files. `check` runs common tests/isolation,
+applicable loader GameTests with discovery guards, and all-loader jar checks.
 
-See [PORTING.md](PORTING.md) before changing Minecraft or loader versions and
-[MIGRATION.md](MIGRATION.md) before upgrading copied worlds or configurations.
+## Icons and settings
+
+All loaders reference the current CurseForge project PNG, bundled locally.
+Source URLs and SHA-256 are in `gradle/icon-provenance.json`; do not replace
+this artwork by running historical SVG generators. Fabric gameplay settings
+use optional Mod Menu 11.0.5; Forge/NeoForge use native Mods-menu adapters.
+SeamlessLib is a library with no gameplay settings screen.
+
+## Status and migration
+
+Local clean builds pass across the suite: 90 unit tests and 86 loader GameTests.
+Client/UI, multiplayer, packaged-server and optional-JEI acceptance is separate:
+see [.github/RELEASE_ACCEPTANCE.md](.github/RELEASE_ACCEPTANCE.md).
+Build success is not production readiness, a GitHub push or a CurseForge release.
+See [PORTING.md](PORTING.md) and [MIGRATION.md](MIGRATION.md).
+Upgrade only backup copies of worlds/configs.
+
+## License
+
+Existing MIT licensing is unchanged; see [LICENSE](LICENSE).

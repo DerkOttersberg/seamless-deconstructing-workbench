@@ -95,8 +95,9 @@ class OutputSlotPlannerTest {
                 List.of(outputStack));
 
         CompoundTag tag = new CompoundTag();
-        operation.save(tag);
-        PendingDeconstructionOperation restored = PendingDeconstructionOperation.load(tag).orElseThrow();
+        var registries = net.minecraft.core.RegistryAccess.fromRegistryOfRegistries(net.minecraft.core.registries.BuiltInRegistries.REGISTRY);
+        operation.save(tag, registries);
+        PendingDeconstructionOperation restored = PendingDeconstructionOperation.load(tag, registries).orElseThrow();
 
         assertTrue(restored.consumesBook());
         assertTrue(restored.matchesInput(input.copyWithCount(32)));
@@ -114,7 +115,7 @@ class OutputSlotPlannerTest {
 
     private static ItemStack namedDiamond(String name) {
         ItemStack stack = new ItemStack(Items.DIAMOND);
-        stack.setHoverName(Component.literal(name));
+        stack.set(net.minecraft.core.component.DataComponents.CUSTOM_NAME, Component.literal(name));
         return stack;
     }
 

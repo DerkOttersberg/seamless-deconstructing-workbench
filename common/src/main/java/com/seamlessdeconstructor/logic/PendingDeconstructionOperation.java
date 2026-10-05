@@ -35,7 +35,7 @@ public final class PendingDeconstructionOperation {
     }
 
     public boolean matchesInput(ItemStack stack) {
-        return !stack.isEmpty() && ItemStack.isSameItemSameTags(inputIdentity, stack);
+        return !stack.isEmpty() && ItemStack.isSameItemSameComponents(inputIdentity, stack);
     }
 
     public ItemStack inputIdentity() {
@@ -50,25 +50,25 @@ public final class PendingDeconstructionOperation {
         return outputs.stream().map(ItemStack::copy).toList();
     }
 
-    public void save(CompoundTag root) {
+    public void save(CompoundTag root, net.minecraft.core.HolderLookup.Provider registries) {
         CompoundTag output = new CompoundTag();
-        output.put(INPUT_KEY, inputIdentity.save(new CompoundTag()));
+        output.put(INPUT_KEY, inputIdentity.save(registries));
         output.putBoolean(CONSUMES_BOOK_KEY, consumesBook);
         ListTag storedOutputs = new ListTag();
-        outputs.forEach(stack -> storedOutputs.add(stack.save(new CompoundTag())));
+        outputs.forEach(stack -> storedOutputs.add(stack.save(registries)));
         output.put(OUTPUTS_KEY, storedOutputs);
         root.put(STORAGE_KEY, output);
     }
 
-    public static Optional<PendingDeconstructionOperation> load(CompoundTag root) {
+    public static Optional<PendingDeconstructionOperation> load(CompoundTag root, net.minecraft.core.HolderLookup.Provider registries) {
         if (!root.contains(STORAGE_KEY, Tag.TAG_COMPOUND)) return Optional.empty();
         CompoundTag stored = root.getCompound(STORAGE_KEY);
-        ItemStack input = ItemStack.of(stored.getCompound(INPUT_KEY));
+        ItemStack input = ItemStack.parseOptional(registries, LegacyItemStackMigration.migrate(stored.getCompound(INPUT_KEY)));
         if (input.isEmpty()) return Optional.empty();
         List<ItemStack> outputs = new ArrayList<>();
         ListTag storedOutputs = stored.getList(OUTPUTS_KEY, Tag.TAG_COMPOUND);
         for (int i = 0; i < storedOutputs.size(); i++) {
-            ItemStack stack = ItemStack.of(storedOutputs.getCompound(i));
+            ItemStack stack = ItemStack.parseOptional(registries, LegacyItemStackMigration.migrate(storedOutputs.getCompound(i)));
             if (!stack.isEmpty()) outputs.addAll(OutputSlotPlanner.splitToMaxStackSize(stack));
         }
         return Optional.of(new PendingDeconstructionOperation(input,
